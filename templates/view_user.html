@@ -1,0 +1,55 @@
+{% include 'admin_header.html' %}
+
+<div class="content-wrap">
+    <div class="page-header">
+        <h1>Patients</h1>
+    </div>
+
+    <div class="panel">
+        <table class="data-table">
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Place</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+
+            {% for u in users %}
+            <tr>
+                <td>{{ u.user_id.username }}</td>
+                <td>{{ u.phone }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.Place }}</td>
+                <td>{{ u.Age }}</td>
+                <td>{{ u.Gender }}</td>
+                <td><span class="status-badge status-{{ u.Approval_Status }}">{{ u.Approval_Status }}</span></td>
+                <td>
+                    {% if u.Approval_Status != 'Approved' %}
+                    <form method="post" action="{% url 'view_user' %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="id" value="{{ u.id }}">
+                        <button type="submit" class="btn btn-approve btn-sm">Approve</button>
+                    </form>
+                    {% endif %}
+                    {% if u.Approval_Status != 'Rejected' %}
+                    <form method="post" action="{% url 'view_user' %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="id" value="{{ u.id }}">
+                        <button type="submit" class="btn btn-reject btn-sm">Reject</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">No patients have registered yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% include 'admin_footer.html' %}

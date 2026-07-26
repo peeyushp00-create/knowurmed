@@ -1,0 +1,237 @@
+{% include 'header.html' %}
+
+<!-- Hero Section -->
+<section id="hero" class="hero section">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="hero-content" data-aos="fade-right">
+          <div class="badge-container">
+            <span class="hero-badge">Your AI Medicine and Prescription Companion</span>
+          </div>
+          <h1 class="hero-title">Understand your prescription before taking your medicines.</h1>
+          <p class="hero-description">Upload a prescription or search for a medicine to receive simple explanations, timing guidance, important precautions, and interaction alerts.</p>
+          <div class="d-flex flex-wrap gap-3 mt-4">
+            <a href="#" class="btn btn-primary btn-lg disabled" aria-disabled="true" title="Prescription upload is coming soon">
+              <i class="bi bi-upload"></i> Upload Prescription <span class="badge bg-light text-dark ms-1">Coming soon</span>
+            </a>
+            <a href="{% url 'search_med' %}" class="btn btn-outline-primary btn-lg">
+              <i class="bi bi-search"></i> Search Medicine
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="hero-image" data-aos="fade-left">
+          <img src="/static/assets/img/health/staff-8.webp" alt="Healthcare professional reviewing a prescription" class="img-fluid main-image rounded-4 shadow">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section id="how-it-works" class="section">
+  <div class="container" data-aos="fade-up">
+    <div class="section-title">
+      <h2>How It Works</h2>
+      <p>From prescription to plain-language understanding, in a few guided steps.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-3 col-sm-6">
+        <div class="card h-100 border-0 shadow-sm text-center p-3">
+          <div class="fs-1 text-primary mb-2"><i class="bi bi-search"></i></div>
+          <h3 class="h6">1. Search or Upload</h3>
+          <p class="small text-muted mb-0">Search a medicine by name, or upload a prescription image or PDF.</p>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card h-100 border-0 shadow-sm text-center p-3">
+          <div class="fs-1 text-primary mb-2"><i class="bi bi-clipboard-check"></i></div>
+          <h3 class="h6">2. Confirm the Medicines</h3>
+          <p class="small text-muted mb-0">You always review and confirm every detected medicine before anything else happens.</p>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card h-100 border-0 shadow-sm text-center p-3">
+          <div class="fs-1 text-primary mb-2"><i class="bi bi-calendar2-week"></i></div>
+          <h3 class="h6">3. Get a Daily Schedule</h3>
+          <p class="small text-muted mb-0">See timing, food guidance, and precautions in one clear daily view.</p>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <div class="card h-100 border-0 shadow-sm text-center p-3">
+          <div class="fs-1 text-primary mb-2"><i class="bi bi-shield-check"></i></div>
+          <h3 class="h6">4. Review Safety Checks</h3>
+          <p class="small text-muted mb-0">See a plain-language safety summary and any potential interactions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Medicine Safety Assistant -->
+<section id="safety-assistant" class="section" style="background:var(--surface-color, #f8f9fb);">
+  <div class="container" data-aos="fade-up">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <h2 class="section-heading">Medicine Safety Assistant</h2>
+        <p class="lead-description">Every medicine in our database includes a plain-language safety summary covering food, driving, pregnancy, breastfeeding, kidney and liver conditions, allergies, and interactions — never a single misleading number.</p>
+        <ul class="list-unstyled">
+          <li class="mb-2"><span class="badge bg-success">Low Concern</span> No significant issue found in available data.</li>
+          <li class="mb-2"><span class="badge bg-warning text-dark">Caution</span> Something to be mindful of.</li>
+          <li class="mb-2"><span class="badge bg-danger">Important Warning</span> A serious precaution to be aware of.</li>
+          <li class="mb-2"><span class="badge bg-primary">Healthcare Review Required</span> Confirm this with your doctor or pharmacist.</li>
+        </ul>
+        <a href="{% url 'search_med' %}" class="btn btn-primary">Try a Medicine Search</a>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+          <h3 class="h6">Example: Kidney Conditions</h3>
+          <span class="badge bg-primary mb-2 align-self-start">Healthcare review required</span>
+          <p class="mb-2">Dose adjustment may be required for people with reduced kidney function.</p>
+          <p class="mb-0"><strong>What to do next:</strong> Confirm the prescribed dose with your doctor or pharmacist.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Prescription Explainer -->
+<section id="prescription-explainer" class="section">
+  <div class="container" data-aos="fade-up">
+    <div class="row align-items-center g-5 flex-lg-row-reverse">
+      <div class="col-lg-6">
+        <h2 class="section-heading">Prescription Explainer</h2>
+        <p class="lead-description">Upload a prescription and we'll help identify the medicines on it using OCR (text extraction). You confirm or correct every detected medicine before we explain anything — nothing is assumed.</p>
+        <p class="text-muted">This feature is in active development. Medicine search is fully available today; prescription upload is coming in a future update.</p>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+          <h3 class="h6 mb-3">What you'll get per medicine</h3>
+          <ul class="mb-0">
+            <li>What it's commonly used for</li>
+            <li>Detected timing (before/with/after food)</li>
+            <li>Common side effects &amp; precautions</li>
+            <li>Interaction alerts with your other medicines</li>
+            <li>Clear source references and review dates</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Why Confirm With a Professional -->
+<section id="confirm" class="section" style="background:var(--surface-color, #f8f9fb);">
+  <div class="container text-center" data-aos="fade-up">
+    <div class="section-title">
+      <h2>Why You Should Confirm With a Healthcare Professional</h2>
+    </div>
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-4">
+        <i class="bi bi-person-check fs-1 text-primary"></i>
+        <h3 class="h6 mt-2">We Don't Diagnose or Prescribe</h3>
+        <p class="small text-muted">This tool explains and organizes information. It never diagnoses a condition or changes a prescription.</p>
+      </div>
+      <div class="col-md-4">
+        <i class="bi bi-file-earmark-text fs-1 text-primary"></i>
+        <h3 class="h6 mt-2">Data Has Limits</h3>
+        <p class="small text-muted">Our database may not cover every medicine, brand, or individual health situation.</p>
+      </div>
+      <div class="col-md-4">
+        <i class="bi bi-camera fs-1 text-primary"></i>
+        <h3 class="h6 mt-2">OCR Can Be Wrong</h3>
+        <p class="small text-muted">Prescription handwriting and image quality can lead to misreads. Always double-check with your pharmacist.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section">
+  <div class="container" data-aos="fade-up">
+    <div class="section-title">
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="accordion mx-auto" id="faqAccordion" style="max-width:800px;">
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+            Is this a substitute for my doctor or pharmacist?
+          </button>
+        </h3>
+        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">No. This is an educational tool. Always confirm dosing, changes, and concerns with your doctor or pharmacist.</div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+            Where does the medicine information come from?
+          </button>
+        </h3>
+        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">From our own admin-curated medicine database, referencing general public patient-information sources. We never let AI invent medical facts — it can only rephrase what's already verified in the database.</div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+            What if a medicine isn't in your database?
+          </button>
+        </h3>
+        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">We clearly show "Information unavailable" rather than guessing or generating unsupported details.</div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h3 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+            Is my prescription data kept private?
+          </button>
+        </h3>
+        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+          <div class="accordion-body">Yes. See our Privacy &amp; Data Protection section below for details on how uploaded files and personal data are handled.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy -->
+<section id="privacy" class="section" style="background:var(--surface-color, #f8f9fb);">
+  <div class="container" data-aos="fade-up">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <h2 class="section-heading">Privacy and Data Protection</h2>
+        <p class="lead-description">Your health information is sensitive, and we treat it that way.</p>
+        <ul>
+          <li>Uploaded prescriptions are not stored permanently by default.</li>
+          <li>Sensitive profile data is never publicly visible.</li>
+          <li>You can view, edit, or delete your stored data at any time.</li>
+          <li>We ask for explicit consent before using your health profile for personalized checks.</li>
+        </ul>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm p-4">
+          <i class="bi bi-shield-lock fs-1 text-primary mb-2"></i>
+          <p class="mb-0">This is an educational tool, not a medical record system. Avoid uploading anything you are not comfortable sharing, and delete any saved reports you no longer need.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section id="final-cta" class="section">
+  <div class="container text-center" data-aos="fade-up">
+    <h2 class="section-heading">Ready to understand your medicines better?</h2>
+    <p class="lead-description mb-4">Search a medicine now, or check back soon for prescription upload.</p>
+    <a href="{% url 'search_med' %}" class="btn btn-primary btn-lg">
+      <i class="bi bi-search"></i> Search Medicine
+    </a>
+  </div>
+</section>
+
+{% include 'footer.html' %}

@@ -1,0 +1,258 @@
+{% include 'admin_header.html' %}
+
+    <!-- ================ ADMIN HEADER ================ -->
+    <header class="admin-header" id="adminHeader">
+        <div class="header-left">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div>
+                <h1 class="page-title">Admin Dashboard</h1>
+                <div class="breadcrumb">
+                    <span>Home</span>
+                    <span class="breadcrumb-separator">/</span>
+                    <span>Dashboard</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-right">
+
+
+            <div class="header-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">5</span>
+                </button>
+
+                <button class="profile-btn">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================ ADMIN HOME CONTENT ================ -->
+
+
+    <!-- ================ ADMIN FOOTER ================ -->
+
+
+    <style>
+        /* Additional styles for new components */
+        .system-metric {
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .metric-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .metric-progress {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .system-status {
+            border-top: 1px solid var(--border-light);
+            padding-top: 1rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.online {
+            background: #059669;
+        }
+
+        .status-indicator.warning {
+            background: #f59e0b;
+        }
+
+        .status-indicator.offline {
+            background: #dc2626;
+        }
+
+        .popular-field-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .popular-field-item:last-child {
+            border-bottom: none;
+        }
+
+        .field-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.2rem;
+        }
+
+        .field-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .field-revenue {
+            font-weight: 600;
+            color: var(--primary-green);
+            font-size: 1.1rem;
+        }
+
+        .pending-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .pending-item:last-child {
+            border-bottom: none;
+        }
+
+        .pending-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .pending-icon.urgent {
+            background: #dc2626;
+        }
+
+        .pending-icon.warning {
+            background: #f59e0b;
+        }
+
+        .pending-icon.info {
+            background: #3b82f6;
+        }
+
+        .pending-icon.success {
+            background: #059669;
+        }
+
+        .pending-content {
+            flex: 1;
+        }
+
+        .pending-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.2rem;
+        }
+
+        .pending-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .pending-action {
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .pending-action:hover {
+            background: var(--secondary-green);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 480px) {
+            .welcome-title {
+                font-size: 1.3rem;
+            }
+
+            .welcome-subtitle {
+                font-size: 1rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .admin-main {
+                padding: 1rem;
+            }
+        }
+    </style>
+
+<main class="admin-main" id="adminMain">
+        <section class="welcome-section fade-in">
+            <div class="welcome-content">
+                <h2 class="welcome-title">Welcome back, Administrator!</h2>
+                <p class="welcome-subtitle">Here's what's happening with your medicine information system today.</p>
+
+                <div class="quick-actions">
+                    <a href="/admin/fields/add/" class="quick-action-btn">
+                        <i class="fas fa-plus"></i>
+                        Add New Field
+                    </a>
+                    <a href="/admin/bookings/" class="quick-action-btn">
+                        <i class="fas fa-calendar"></i>
+                        View Bookings
+                    </a>
+                    <a href="/admin/reports/" class="quick-action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        Generate Report
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+ {% include 'admin_footer.html' %}
+
+

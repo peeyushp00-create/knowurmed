@@ -1,0 +1,37 @@
+{% include 'admin_header.html' %}
+<div class="content-wrap">
+    <div class="page-header">
+        <h1>Complaints</h1>
+    </div>
+
+    <div class="panel">
+        <table class="data-table">
+            <tr>
+                <th>Patient</th>
+                <th>Complaint</th>
+                <th>Date</th>
+                <th>Reply</th>
+            </tr>
+
+            {% for c in complaint_list %}
+            <tr>
+                <td>{{ c.user.user_id.username }}</td>
+                <td>{{ c.complaints }}</td>
+                <td>{{ c.date }}</td>
+                <td>
+                    <form method="post" action="{% url 'complaints' %}" class="reply-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ c.id }}">
+                        <input type="text" name="reply" value="{{ c.reply }}" placeholder="enter your reply">
+                        <button type="submit" class="btn btn-primary btn-sm">Send</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No complaints filed yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% include 'admin_footer.html' %}

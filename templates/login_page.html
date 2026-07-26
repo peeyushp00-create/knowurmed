@@ -1,0 +1,88 @@
+{% include 'header.html' %}
+
+    <section id="hero" class="hero section">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-5">
+            <div class="hero-image" data-aos="fade-right" data-aos-delay="100">
+              <img src="/static/assets/img/health/staff-8.webp" alt="Healthcare Professional" class="img-fluid main-image">
+              <div class="floating-card emergency-card" data-aos="fade-up" data-aos-delay="300">
+                <div class="card-content">
+                  <i class="bi bi-telephone-fill">99999999</i>
+                  <div class="text">
+                  </div>
+                </div>
+              </div>
+              <div class="floating-card stats-card" data-aos="fade-up" data-aos-delay="400">
+                <div class="stat-item">
+                </div>
+                <div class="stat-item">
+                  <span class="number">98%</span>
+                  <span class="label">Satisfaction Rate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-7">
+            <div class="hero-content" data-aos="fade-left" data-aos-delay="200">
+              <div class="badge-container">
+
+              </div>
+
+
+              <div class="hero-stats">
+                <div class="stat-group">
+                  <div class="stat">
+                    <i class="bi bi-award"></i>
+                    <div class="stat-text">
+                      <span class="number">35+</span>
+                      <span class="label">Years Experience</span>
+                    </div>
+                  </div>
+                  <div class="stat">
+                    <i class="bi bi-people"></i>
+                    <div class="stat-text">
+                      <span class="number">150+</span>
+                      <span class="label">Medical Specialists</span>
+                    </div>
+                  </div>
+                  <div class="stat">
+                    <i class="bi bi-geo-alt"></i>
+                    <div class="stat-text">
+                      <span class="number">12</span>
+                      <span class="label">Clinic Locations</span>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+                <div class="card shadow-sm border-0 p-4" style="max-width:420px;">
+                     <h1 class="h3 mb-4">Login</h1>
+                      <form method="post">
+                          {% csrf_token %}
+                          <div class="mb-3">
+                              <label class="form-label">Username</label>
+                              <input type="text" class="form-control" placeholder="enter username" name="username" required>
+                          </div>
+                          <div class="mb-3">
+                              <label class="form-label">Password</label>
+                              <input type="password" class="form-control" placeholder="enter password" name="password" required>
+                          </div>
+                          <button type="submit" class="btn btn-primary w-100">Login</button>
+                      </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="background-elements">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        <div class="bg-pattern">
+
+        </div>
+      </div>
+    </section><!-- /Hero Section --   <!-- Hero Section -->>
+{% include 'footer.html' %}

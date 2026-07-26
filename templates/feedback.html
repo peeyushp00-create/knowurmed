@@ -1,0 +1,28 @@
+{% include 'admin_header.html' %}
+<div class="content-wrap">
+    <div class="page-header">
+        <h1>Feedback</h1>
+    </div>
+
+    <div class="panel">
+        <table class="data-table">
+            <tr>
+                <th>Patient</th>
+                <th>Feedback</th>
+                <th>Date</th>
+            </tr>
+
+            {% for f in feedback_list %}
+            <tr>
+                <td>{{ f.user.user_id.username }}</td>
+                <td>{{ f.feedback }}</td>
+                <td>{{ f.date }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">No feedback submitted yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% include 'admin_footer.html' %}

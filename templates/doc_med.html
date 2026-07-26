@@ -1,0 +1,40 @@
+{% include 'docter_header.html' %}
+
+<section class="hero section">
+<div class="container">
+<h2 class="mb-4">Medicine Reference</h2>
+<div class="table-responsive bg-white rounded shadow-sm p-3">
+<table class="table table-bordered table-hover align-middle mb-0">
+    <tr>
+        <th>Medicine Name</th>
+        <th>Generic Name</th>
+        <th>Composition</th>
+        <th>Indications</th>
+        <th>Dosage</th>
+        <th>Side Effects</th>
+        <th>Precautions</th>
+        <th>Drug Interactions</th>
+        <th>Manufacturer</th>
+    </tr>
+
+    {% for med in medicines %}
+    <tr>
+        <td>{{ med.Medicine_name }}</td>
+        <td>{{ med.Generic_Name }}</td>
+        <td>{{ med.Composition }}</td>
+        <td>{{ med.Indications }}</td>
+        <td>{{ med.Dosage }}</td>
+        <td>{{ med.Side_effects }}</td>
+        <td>{{ med.Precautions }}</td>
+        <td>{{ med.Drug_interactions }}</td>
+        <td>{{ med.Manufacturer }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9" class="text-center">No medicines added yet.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+</section>
+
+{% include 'footer.html' %}

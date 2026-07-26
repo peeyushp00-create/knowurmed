@@ -1,0 +1,146 @@
+<footer class="admin-footer" id="adminFooter">
+        <div class="footer-content">
+            <div class="footer-text">
+                © 2023 TurfPro Admin Panel. All rights reserved. | Version 2.1.0
+            </div>
+            <div class="footer-links">
+                <a href="/admin/help/">Help & Support</a>
+                <a href="/admin/documentation/">Documentation</a>
+                <a href="/admin/changelog/">Changelog</a>
+                <a href="/admin/system-info/">System Info</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Sidebar functionality
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('sidebar');
+        const adminHeader = document.getElementById('adminHeader');
+        const adminMain = document.getElementById('adminMain');
+        const adminFooter = document.getElementById('adminFooter');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        let isMobile = window.innerWidth <= 768;
+        let sidebarCollapsed = false;
+
+        // Toggle sidebar
+        sidebarToggle.addEventListener('click', () => {
+            if (isMobile) {
+                sidebar.classList.toggle('mobile-open');
+                sidebarOverlay.classList.toggle('active');
+            } else {
+                sidebarCollapsed = !sidebarCollapsed;
+                sidebar.classList.toggle('collapsed');
+                adminHeader.classList.toggle('sidebar-collapsed');
+                adminMain.classList.toggle('sidebar-collapsed');
+                adminFooter.classList.toggle('sidebar-collapsed');
+            }
+        });
+
+        // Close sidebar on overlay click (mobile)
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const wasMobile = isMobile;
+            isMobile = window.innerWidth <= 768;
+
+            if (wasMobile !== isMobile) {
+                if (isMobile) {
+                    // Switching to mobile
+                    sidebar.classList.remove('collapsed', 'mobile-open');
+                    adminHeader.classList.remove('sidebar-collapsed');
+                    adminMain.classList.remove('sidebar-collapsed');
+                    adminFooter.classList.remove('sidebar-collapsed');
+                    sidebarOverlay.classList.remove('active');
+                } else {
+                    // Switching to desktop
+                    sidebar.classList.remove('mobile-open');
+                    sidebarOverlay.classList.remove('active');
+                    if (sidebarCollapsed) {
+                        sidebar.classList.add('collapsed');
+                        adminHeader.classList.add('sidebar-collapsed');
+                        adminMain.classList.add('sidebar-collapsed');
+                        adminFooter.classList.add('sidebar-collapsed');
+                    }
+                }
+            }
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.style.width = '350px';
+        });
+
+        searchInput.addEventListener('blur', () => {
+            if (!searchInput.value) {
+                searchInput.style.width = '300px';
+            }
+        });
+
+        // Notification handling
+        const notificationBtn = document.querySelector('.notification-btn');
+        notificationBtn.addEventListener('click', () => {
+            // Simulate notification dropdown
+            alert('Notifications:\n• 3 new booking requests\n• 2 maintenance alerts\n• 1 system update available');
+        });
+
+        // Profile handling
+        const profileBtn = document.querySelector('.profile-btn');
+        profileBtn.addEventListener('click', () => {
+            // Simulate profile dropdown
+            const dropdown = `
+                Profile Options:
+                • View Profile
+                • Account Settings
+                • Change Password
+                • Logout
+            `;
+            alert(dropdown);
+        });
+
+        // Animate cards on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Add click handlers for quick actions
+        document.querySelectorAll('.quick-action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const btnText = btn.textContent.trim();
+                console.log(`Clicked: ${btnText}`);
+                // Add actual navigation here
+            });
+        });
+
+        // Add click handlers for pending actions
+        document.querySelectorAll('.pending-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const btnText = btn.textContent.trim();
+                console.log(`Action clicked: ${btnText}`);
+                // Add actual action handling here
+            });
+        });
+
+        // Simulate real-time updates
+        setInterval(() => {
+            const notificationBadge = document.querySelector('.notification-badge');
+            let count = parseInt(notificationBadge.textContent);
+            if (Math.random() > 0.95) { // 5% chance every second
+                count++;
+                notificationBadge.textContent = count;
+            }
+        }, 1000);
+    </script>

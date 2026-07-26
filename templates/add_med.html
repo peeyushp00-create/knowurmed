@@ -1,0 +1,97 @@
+{% include 'admin_header.html' %}
+
+<div class="content-wrap">
+    <div class="page-header">
+        <h1>Medicines</h1>
+    </div>
+
+    <div class="panel">
+        <h2>Add Medicine</h2>
+        <form method="post" action="{% url 'add_med' %}">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Medicine Name</label>
+                    <input type="text" name="medicine_name" placeholder="enter medicine name" required>
+                </div>
+                <div class="form-field">
+                    <label>Generic Name</label>
+                    <input type="text" name="generic_name" placeholder="enter generic name" required>
+                </div>
+                <div class="form-field">
+                    <label>Composition</label>
+                    <input type="text" name="composition" placeholder="enter the composition" required>
+                </div>
+                <div class="form-field">
+                    <label>Indications</label>
+                    <input type="text" name="indications" placeholder="enter the indications" required>
+                </div>
+                <div class="form-field">
+                    <label>Dosage</label>
+                    <input type="text" name="dosage" placeholder="enter the dosage" required>
+                </div>
+                <div class="form-field">
+                    <label>Side Effects</label>
+                    <input type="text" name="side_effects" placeholder="enter the side effects" required>
+                </div>
+                <div class="form-field">
+                    <label>Precautions</label>
+                    <input type="text" name="precautions" placeholder="enter the precautions" required>
+                </div>
+                <div class="form-field">
+                    <label>Drug Interactions</label>
+                    <input type="text" name="drug_interactions" placeholder="enter the drug interactions" required>
+                </div>
+                <div class="form-field">
+                    <label>Manufacturer</label>
+                    <input type="text" name="manufacturer" placeholder="enter the manufacturer" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Medicine</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h2>All Medicines</h2>
+        <table class="data-table">
+            <tr>
+                <th>Medicine Name</th>
+                <th>Generic Name</th>
+                <th>Composition</th>
+                <th>Indications</th>
+                <th>Dosage</th>
+                <th>Side Effects</th>
+                <th>Precautions</th>
+                <th>Drug Interactions</th>
+                <th>Manufacturer</th>
+                <th>Action</th>
+            </tr>
+
+            {% for med in medicines %}
+            <tr>
+                <td>{{ med.Medicine_name }}</td>
+                <td>{{ med.Generic_Name }}</td>
+                <td>{{ med.Composition }}</td>
+                <td>{{ med.Indications }}</td>
+                <td>{{ med.Dosage }}</td>
+                <td>{{ med.Side_effects }}</td>
+                <td>{{ med.Precautions }}</td>
+                <td>{{ med.Drug_interactions }}</td>
+                <td>{{ med.Manufacturer }}</td>
+                <td>
+                    <form method="post" action="{% url 'add_med' %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="{{ med.id }}">
+                        <button type="submit" class="btn btn-delete btn-sm" onclick="return confirm('Delete this medicine?');">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10">No medicines added yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% include 'admin_footer.html' %}

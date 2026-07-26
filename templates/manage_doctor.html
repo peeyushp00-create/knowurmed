@@ -1,0 +1,51 @@
+{% include 'admin_header.html' %}
+<div class="content-wrap">
+    <div class="page-header">
+        <h1>Manage Doctors</h1>
+    </div>
+
+    <div class="panel">
+        <table class="data-table">
+            <tr>
+                <th>Name</th>
+                <th>Specialization</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+
+            {% for doctor in doctors %}
+            <tr>
+                <td>{{ doctor.Name }}</td>
+                <td>{{ doctor.Specaialization }}</td>
+                <td>{{ doctor.Phone }}</td>
+                <td>{{ doctor.Email }}</td>
+                <td><span class="status-badge status-{{ doctor.Approval_Status }}">{{ doctor.Approval_Status }}</span></td>
+                <td>
+                    {% if doctor.Approval_Status != 'Approved' %}
+                    <form method="post" action="{% url 'manage_doctor' %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="id" value="{{ doctor.id }}">
+                        <button type="submit" class="btn btn-approve btn-sm">Approve</button>
+                    </form>
+                    {% endif %}
+                    {% if doctor.Approval_Status != 'Rejected' %}
+                    <form method="post" action="{% url 'manage_doctor' %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reject">
+                        <input type="hidden" name="id" value="{{ doctor.id }}">
+                        <button type="submit" class="btn btn-reject btn-sm">Reject</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No doctors have registered yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% include 'admin_footer.html' %}

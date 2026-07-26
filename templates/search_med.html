@@ -1,0 +1,169 @@
+{% load safety_extras %}
+{% include 'header.html' %}
+
+<section id="hero" class="hero section">
+<div class="container">
+<h1 class="mb-2 text-center">Search Medicine</h1>
+<p class="text-center text-muted mb-4">Look up a medicine to see its uses, timing guidance, precautions, and a general safety summary.</p>
+
+<div class="position-relative mb-4" style="max-width:500px;margin:0 auto;">
+  <form method="get" action="{% url 'search_med' %}" class="d-flex gap-2" autocomplete="off">
+      <input type="text" class="form-control" id="medSearchInput" name="q" placeholder="enter medicine name" value="{{ query }}">
+      <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+  <div id="medSearchSuggestions" class="list-group position-absolute w-100 shadow-sm" style="z-index:1000;"></div>
+</div>
+
+{% if not query %}
+<p class="text-center text-muted">Enter a medicine name above to search.</p>
+{% elif not medicines %}
+<p class="text-center text-muted">No medicines found for "{{ query }}". Try a different spelling or the generic name.</p>
+{% endif %}
+
+{% for med in medicines %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+      <div>
+        <h2 class="h4 mb-1">{{ med.Medicine_name }}</h2>
+        <p class="text-muted mb-0">
+          {{ med.Generic_Name|or_unavailable }}
+          {% if med.category %} &middot; {{ med.category }}{% endif %}
+          {% if med.prescription_required %} &middot; <span class="badge bg-secondary">Prescription required</span>{% else %} &middot; <span class="badge bg-light text-dark border">Over the counter</span>{% endif %}
+        </p>
+      </div>
+      <span class="badge {{ med.safety_notes|overall_safety_css }} fs-6">{{ med.safety_notes|overall_safety_summary }}</span>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <h3 class="h6">Main Uses</h3>
+        <p>{{ med.Indications|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">How It Works</h3>
+        <p>{{ med.mechanism|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Composition &amp; Strength</h3>
+        <p>{{ med.Composition|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Dosage Form / Manufacturer</h3>
+        <p>{{ med.Dosage|or_unavailable }} &middot; {{ med.Manufacturer|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Common Side Effects</h3>
+        <p>{{ med.Side_effects|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Important Precautions</h3>
+        <p>{{ med.Precautions|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Food-Related Guidance</h3>
+        <p>{{ med.food_guidance|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Driving-Related Warning</h3>
+        <p>{{ med.driving_warning|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Pregnancy Information</h3>
+        <p>{{ med.pregnancy_info|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Breastfeeding Information</h3>
+        <p>{{ med.breastfeeding_info|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Kidney-Related Precaution</h3>
+        <p>{{ med.kidney_precaution|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Liver-Related Precaution</h3>
+        <p>{{ med.liver_precaution|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Storage Instructions</h3>
+        <p>{{ med.storage_instructions|or_unavailable }}</p>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6">Missed-Dose Guidance</h3>
+        <p>{{ med.missed_dose_guidance|or_unavailable }}</p>
+      </div>
+      <div class="col-12">
+        <h3 class="h6">Serious Warning Signs</h3>
+        <p>{{ med.serious_warning_signs|or_unavailable }}</p>
+      </div>
+    </div>
+
+    <h3 class="h6">Medicine Safety Summary</h3>
+    <p class="small text-muted">This result depends on the accuracy of the information available and is not a substitute for professional medical advice.</p>
+    <div class="row">
+      {% for note in med.safety_notes.all %}
+      <div class="col-md-6">
+        {% include '_safety_status_card.html' with note=note %}
+      </div>
+      {% empty %}
+      <div class="col-12"><p class="text-muted">Information unavailable for this medicine's safety categories.</p></div>
+      {% endfor %}
+    </div>
+
+    <p class="small text-muted mb-0 mt-2">
+      Source: {{ med.source_reference|or_unavailable }}
+      {% if med.last_reviewed %} &middot; Last reviewed {{ med.last_reviewed }}{% endif %}
+    </p>
+  </div>
+</div>
+{% endfor %}
+
+</div>
+</section>
+
+{% include 'footer.html' %}
+
+<script>
+(function () {
+  var input = document.getElementById('medSearchInput');
+  var box = document.getElementById('medSearchSuggestions');
+  var timer = null;
+
+  function clearSuggestions() {
+    box.innerHTML = '';
+  }
+
+  input.addEventListener('input', function () {
+    var q = input.value.trim();
+    clearTimeout(timer);
+    if (q.length < 2) {
+      clearSuggestions();
+      return;
+    }
+    timer = setTimeout(function () {
+      fetch('{% url "search_med_autocomplete" %}?q=' + encodeURIComponent(q))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          clearSuggestions();
+          data.results.forEach(function (item) {
+            var a = document.createElement('a');
+            a.href = '#';
+            a.className = 'list-group-item list-group-item-action';
+            a.textContent = item.name + (item.generic_name ? ' (' + item.generic_name + ')' : '');
+            a.addEventListener('click', function (e) {
+              e.preventDefault();
+              input.value = item.name;
+              clearSuggestions();
+              input.form.submit();
+            });
+            box.appendChild(a);
+          });
+        });
+    }, 200);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (e.target !== input) clearSuggestions();
+  });
+})();
+</script>

@@ -1,0 +1,20 @@
+{% load safety_extras %}
+<div class="card border-0 shadow-sm mb-3 safety-status-card">
+  <div class="card-body">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+      <h3 class="h6 mb-0">{{ note.get_category_display }}</h3>
+      <span class="badge {{ note.status|status_css }}">
+        <i class="bi {{ note.status|status_icon }}"></i>
+        {{ note.get_status_display }}
+      </span>
+    </div>
+    <p class="mb-2">{{ note.explanation|or_unavailable }}</p>
+    {% if note.recommended_action %}
+    <p class="mb-2"><strong>What to do next:</strong> {{ note.recommended_action }}</p>
+    {% endif %}
+    <p class="small text-muted mb-0">
+      Source: {{ note.source_reference|or_unavailable }}
+      {% if note.reviewed_date %} &middot; Reviewed {{ note.reviewed_date }}{% endif %}
+    </p>
+  </div>
+</div>

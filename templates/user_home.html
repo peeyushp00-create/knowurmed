@@ -1,0 +1,124 @@
+{% include 'header.html' %}
+
+<section id="hero" class="hero section">
+<div class="container">
+
+<h1 class="mb-1">Welcome{% if profile %}, {{ profile.user_id.username }}{% endif %}</h1>
+<p class="mb-4"><a href="{% url 'search_med' %}" class="btn btn-outline-primary btn-sm">Search Medicines</a></p>
+
+<div class="card shadow-sm border-0 p-4 mb-4">
+<h2 class="h4 mb-3">Book an Appointment</h2>
+<div class="table-responsive">
+<table class="table table-bordered align-middle mb-0">
+    <tr>
+        <th>Doctor</th>
+        <th>Specialization</th>
+        <th>Book</th>
+    </tr>
+    {% for doctor in doctors %}
+    <tr>
+        <td>{{ doctor.Name }}</td>
+        <td>{{ doctor.Specaialization }}</td>
+        <td>
+            <form method="post" action="{% url 'book_appointment' %}" class="d-flex gap-2 flex-wrap">
+                {% csrf_token %}
+                <input type="hidden" name="doctor_id" value="{{ doctor.user_id.id }}">
+                <input type="date" class="form-control form-control-sm" style="max-width:160px;" name="date" required>
+                <input type="time" class="form-control form-control-sm" style="max-width:130px;" name="time" required>
+                <button type="submit" class="btn btn-primary btn-sm">Book</button>
+            </form>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" class="text-center">No approved doctors available yet.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+
+<div class="card shadow-sm border-0 p-4 mb-4">
+<h2 class="h4 mb-3">My Appointments</h2>
+<div class="table-responsive">
+<table class="table table-bordered align-middle mb-0">
+    <tr>
+        <th>Doctor</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Status</th>
+    </tr>
+    {% for appt in appointments %}
+    <tr>
+        <td>{{ appt.DOCTOR_ID.username }}</td>
+        <td>{{ appt.date }}</td>
+        <td>{{ appt.time }}</td>
+        <td>
+            {% if appt.status == 'Approved' %}<span class="badge bg-success">{{ appt.status }}</span>
+            {% elif appt.status == 'Declined' %}<span class="badge bg-danger">{{ appt.status }}</span>
+            {% else %}<span class="badge bg-warning text-dark">{{ appt.status }}</span>{% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="text-center">You have no appointments yet.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+
+<div class="card shadow-sm border-0 p-4 mb-4">
+<h2 class="h4 mb-3">File a Complaint</h2>
+<form method="post" action="{% url 'submit_complaint' %}" class="d-flex gap-2 mb-3">
+    {% csrf_token %}
+    <input type="text" class="form-control" name="complaint" placeholder="enter your complaint" required>
+    <button type="submit" class="btn btn-primary text-nowrap">Submit</button>
+</form>
+
+<div class="table-responsive">
+<table class="table table-bordered align-middle mb-0">
+    <tr>
+        <th>Complaint</th>
+        <th>Date</th>
+        <th>Reply</th>
+    </tr>
+    {% for c in complaint_list %}
+    <tr>
+        <td>{{ c.complaints }}</td>
+        <td>{{ c.date }}</td>
+        <td>{{ c.reply|default:"Awaiting reply" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" class="text-center">You haven't filed any complaints.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+
+<div class="card shadow-sm border-0 p-4 mb-4">
+<h2 class="h4 mb-3">Leave Feedback</h2>
+<form method="post" action="{% url 'submit_feedback' %}" class="d-flex gap-2 mb-3">
+    {% csrf_token %}
+    <input type="text" class="form-control" name="feedback" placeholder="enter your feedback" required>
+    <button type="submit" class="btn btn-primary text-nowrap">Submit</button>
+</form>
+
+<div class="table-responsive">
+<table class="table table-bordered align-middle mb-0">
+    <tr>
+        <th>Feedback</th>
+        <th>Date</th>
+    </tr>
+    {% for f in feedback_list %}
+    <tr>
+        <td>{{ f.feedback }}</td>
+        <td>{{ f.date }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="2" class="text-center">You haven't left any feedback.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+
+</div>
+</section>
+
+{% include 'footer.html' %}

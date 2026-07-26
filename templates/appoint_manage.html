@@ -1,0 +1,54 @@
+{% include 'header.html' %}
+
+<section class="hero section">
+<div class="container">
+<h2 class="mb-4">Appointment Management</h2>
+<div class="table-responsive bg-white rounded shadow-sm p-3">
+  <table class="table table-bordered table-hover align-middle mb-0">
+            <tr>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+
+            {% for appt in appointments %}
+            <tr>
+                <td>{{ appt.user.user_id.username }}</td>
+                <td>{{ appt.DOCTOR_ID.username }}</td>
+                <td>{{ appt.date }}</td>
+                <td>{{ appt.time }}</td>
+                <td>
+                    {% if appt.status == 'Approved' %}<span class="badge bg-success">{{ appt.status }}</span>
+                    {% elif appt.status == 'Declined' %}<span class="badge bg-danger">{{ appt.status }}</span>
+                    {% else %}<span class="badge bg-warning text-dark">{{ appt.status }}</span>{% endif %}
+                </td>
+                <td>
+                    {% if appt.status == 'Pending' %}
+                    <form method="post" action="{% url 'appoint_manage' %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="id" value="{{ appt.id }}">
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'appoint_manage' %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="decline">
+                        <input type="hidden" name="id" value="{{ appt.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">No appointments yet.</td></tr>
+            {% endfor %}
+  </table>
+</div>
+
+</div>
+</section>
+
+{% include 'footer.html' %}

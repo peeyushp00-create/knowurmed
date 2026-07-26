@@ -1,0 +1,37 @@
+{% include 'docter_header.html' %}
+
+<section class="hero section">
+<div class="container">
+<h2 class="mb-4">Patient Complaints</h2>
+<div class="table-responsive bg-white rounded shadow-sm p-3">
+<table class="table table-bordered table-hover align-middle mb-0">
+    <tr>
+        <th>Patient</th>
+        <th>Complaint</th>
+        <th>Date</th>
+        <th>Reply</th>
+    </tr>
+
+    {% for c in complaint_list %}
+    <tr>
+        <td>{{ c.user.user_id.username }}</td>
+        <td>{{ c.complaints }}</td>
+        <td>{{ c.date }}</td>
+        <td>
+            <form method="post" action="{% url 'doc_complaint' %}" class="d-flex gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="id" value="{{ c.id }}">
+                <input type="text" class="form-control form-control-sm" name="reply" value="{{ c.reply }}" placeholder="enter your reply">
+                <button type="submit" class="btn btn-primary btn-sm">Send</button>
+            </form>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="text-center">No complaints filed yet.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
+</section>
+
+{% include 'footer.html' %}

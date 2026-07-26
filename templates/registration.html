@@ -1,0 +1,122 @@
+{% include 'header.html' %}
+<section id="hero" class="hero section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-5">
+                <div class="hero-image" data-aos="fade-right" data-aos-delay="100">
+                    <img src="/static/assets/img/health/staff-8.webp" alt="Healthcare Professional"
+                         class="img-fluid main-image">
+                    <div class="floating-card emergency-card" data-aos="fade-up" data-aos-delay="300">
+                        <div class="card-content">
+                            <i class="bi bi-telephone-fill"></i>
+                            <div class="text">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="floating-card stats-card" data-aos="fade-up" data-aos-delay="400">
+                        <div class="stat-item">
+                        </div>
+                        <div class="stat-item">
+                            <span class="number">98%</span>
+                            <span class="label">Satisfaction Rate</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="hero-content" data-aos="fade-left" data-aos-delay="200">
+                    <div class="badge-container">
+
+                    </div>
+
+
+                    <div class="hero-stats">
+                        <div class="stat-group">
+                            <div class="stat">
+                                <i class="bi bi-award"></i>
+                                <div class="stat-text">
+                                    <span class="number">35+</span>
+                                    <span class="label">Years Experience</span>
+                                </div>
+                            </div>
+                            <div class="stat">
+                                <i class="bi bi-people"></i>
+                                <div class="stat-text">
+                                    <span class="number">150+</span>
+                                    <span class="label">Medical Specialists</span>
+                                </div>
+                            </div>
+                            <div class="stat">
+                                <i class="bi bi-geo-alt"></i>
+                                <div class="stat-text">
+                                    <span class="number">12</span>
+                                    <span class="label">Clinic Locations</span>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0 p-4">
+                        <h1 class="h3 mb-4">Patient Registration</h1>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" name="username" placeholder="enter user name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label d-block">Gender</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="gender" value="Male" id="genderMale" required>
+                                        <label class="form-check-label" for="genderMale">Male</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="gender" value="Female" id="genderFemale">
+                                        <label class="form-check-label" for="genderFemale">Female</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" name="age" placeholder="enter your age" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Place</label>
+                                    <input type="text" class="form-control" name="place" placeholder="enter your place" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" placeholder="enter your email" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="text" class="form-control" name="phone" placeholder="enter phone number" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" name="password" placeholder="enter password" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Confirm Password</label>
+                                    <input type="password" class="form-control" name="confirm_password" placeholder="confirm password" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-4">Confirm</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="background-elements">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        <div class="bg-pattern">
+
+        </div>
+    </div>
+</section><!-- /Hero Section --   <!-- Hero Section -->>
+
+{% include 'footer.html' %}

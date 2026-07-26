@@ -1,0 +1,171 @@
+{% include 'header.html' %}
+
+<section id="hero" class="hero section">
+<div class="container" style="max-width:700px;">
+<h1 class="mb-2 text-center">Upload Prescription</h1>
+<p class="text-center text-muted mb-4">We'll try to read the medicines on it using OCR. You'll review and confirm every detected medicine before anything else happens.</p>
+
+<div class="card border-0 shadow-sm p-4">
+
+  <div id="dropZone" class="border border-2 border-dashed rounded-4 text-center p-5" style="cursor:pointer;">
+    <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
+    <p class="mb-1 mt-2">Drag &amp; drop your prescription here, or click to browse</p>
+    <p class="small text-muted mb-0">JPG, JPEG, PNG, or PDF &middot; up to 10 MB</p>
+  </div>
+  <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" capture="environment" style="display:none;">
+
+  <div id="fileInfo" class="d-none d-flex align-items-center justify-content-between border rounded-3 p-3 mt-3">
+    <div>
+      <strong id="fileName"></strong>
+      <div class="small text-muted" id="fileSize"></div>
+    </div>
+    <button type="button" id="removeFileBtn" class="btn btn-outline-danger btn-sm">Remove</button>
+  </div>
+
+  <div id="uploadError" class="alert alert-danger d-none mt-3" role="alert"></div>
+
+  <div id="progressWrap" class="d-none mt-3">
+    <div class="progress" style="height:22px;">
+      <div id="progressBar" class="progress-bar" role="progressbar" style="width:0%;">0%</div>
+    </div>
+  </div>
+
+  <button type="button" id="uploadBtn" class="btn btn-primary w-100 mt-3" disabled>Upload Prescription</button>
+
+  <p class="small text-muted mt-3 mb-0">
+    <i class="bi bi-shield-lock"></i>
+    Privacy: this file is only accessible to you. It is not stored permanently by default and you can delete it at any time from the review screen.
+  </p>
+</div>
+
+</div>
+</section>
+
+{% include 'footer.html' %}
+
+<script>
+(function () {
+  var MAX_SIZE = 10 * 1024 * 1024;
+  var ALLOWED_EXT = ['.jpg', '.jpeg', '.png', '.pdf'];
+
+  var dropZone = document.getElementById('dropZone');
+  var fileInput = document.getElementById('fileInput');
+  var fileInfo = document.getElementById('fileInfo');
+  var fileName = document.getElementById('fileName');
+  var fileSize = document.getElementById('fileSize');
+  var removeFileBtn = document.getElementById('removeFileBtn');
+  var uploadBtn = document.getElementById('uploadBtn');
+  var uploadError = document.getElementById('uploadError');
+  var progressWrap = document.getElementById('progressWrap');
+  var progressBar = document.getElementById('progressBar');
+
+  var selectedFile = null;
+
+  function showError(msg) {
+    uploadError.textContent = msg;
+    uploadError.classList.remove('d-none');
+  }
+
+  function clearError() {
+    uploadError.classList.add('d-none');
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function validate(file) {
+    var ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (ALLOWED_EXT.indexOf(ext) === -1) {
+      return 'Unsupported file type. Please choose a JPG, PNG, or PDF.';
+    }
+    if (file.size > MAX_SIZE) {
+      return 'File is too large. Maximum size is 10 MB.';
+    }
+    return null;
+  }
+
+  function selectFile(file) {
+    clearError();
+    var error = validate(file);
+    if (error) {
+      showError(error);
+      return;
+    }
+    selectedFile = file;
+    fileName.textContent = file.name;
+    fileSize.textContent = formatSize(file.size);
+    fileInfo.classList.remove('d-none');
+    dropZone.classList.add('d-none');
+    uploadBtn.disabled = false;
+  }
+
+  function resetSelection() {
+    selectedFile = null;
+    fileInput.value = '';
+    fileInfo.classList.add('d-none');
+    dropZone.classList.remove('d-none');
+    uploadBtn.disabled = true;
+  }
+
+  dropZone.addEventListener('click', function () { fileInput.click(); });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files.length) selectFile(fileInput.files[0]);
+  });
+
+  ['dragover', 'dragenter'].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropZone.classList.add('border-primary');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (evt) {
+    dropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropZone.classList.remove('border-primary');
+    });
+  });
+  dropZone.addEventListener('drop', function (e) {
+    if (e.dataTransfer.files.length) selectFile(e.dataTransfer.files[0]);
+  });
+
+  removeFileBtn.addEventListener('click', resetSelection);
+
+  uploadBtn.addEventListener('click', function () {
+    if (!selectedFile) return;
+    clearError();
+    uploadBtn.disabled = true;
+    progressWrap.classList.remove('d-none');
+
+    var formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '{% url "prescription_upload" %}');
+    xhr.upload.onprogress = function (e) {
+      if (e.lengthComputable) {
+        var pct = Math.round((e.loaded / e.total) * 100);
+        progressBar.style.width = pct + '%';
+        progressBar.textContent = pct + '%';
+      }
+    };
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 400) {
+        window.location = xhr.responseURL;
+      } else {
+        uploadBtn.disabled = false;
+        progressWrap.classList.add('d-none');
+        showError('Upload failed. Please try again.');
+      }
+    };
+    xhr.onerror = function () {
+      uploadBtn.disabled = false;
+      progressWrap.classList.add('d-none');
+      showError('Upload failed. Please check your connection and try again.');
+    };
+    xhr.send(formData);
+  });
+})();
+</script>

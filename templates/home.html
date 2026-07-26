@@ -12,8 +12,8 @@
           <h1 class="hero-title">Understand your prescription before taking your medicines.</h1>
           <p class="hero-description">Upload a prescription or search for a medicine to receive simple explanations, timing guidance, important precautions, and interaction alerts.</p>
           <div class="d-flex flex-wrap gap-3 mt-4">
-            <a href="#" class="btn btn-primary btn-lg disabled" aria-disabled="true" title="Prescription upload is coming soon">
-              <i class="bi bi-upload"></i> Upload Prescription <span class="badge bg-light text-dark ms-1">Coming soon</span>
+            <a href="{% url 'prescription_upload' %}" class="btn btn-primary btn-lg">
+              <i class="bi bi-upload"></i> Upload Prescription
             </a>
             <a href="{% url 'search_med' %}" class="btn btn-outline-primary btn-lg">
               <i class="bi bi-search"></i> Search Medicine
@@ -104,7 +104,10 @@
       <div class="col-lg-6">
         <h2 class="section-heading">Prescription Explainer</h2>
         <p class="lead-description">Upload a prescription and we'll help identify the medicines on it using OCR (text extraction). You confirm or correct every detected medicine before we explain anything — nothing is assumed.</p>
-        <p class="text-muted">This feature is in active development. Medicine search is fully available today; prescription upload is coming in a future update.</p>
+        <p class="text-muted">Upload and OCR review are available today. Automatic explanations, daily schedules, and interaction checks from your confirmed prescription are coming in a future update.</p>
+        <a href="{% url 'prescription_upload' %}" class="btn btn-primary">
+          <i class="bi bi-upload"></i> Upload a Prescription
+        </a>
       </div>
       <div class="col-lg-6">
         <div class="card border-0 shadow-sm p-4">
@@ -116,6 +119,36 @@
             <li>Interaction alerts with your other medicines</li>
             <li>Clear source references and review dates</li>
           </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Why KnowUrMed -->
+<section id="why-us" class="section">
+  <div class="container" data-aos="fade-up">
+    <div class="section-title">
+      <h2>Why Not Just Google It or Ask a Chatbot?</h2>
+      <p>Both are useful tools &mdash; but neither was built for reviewing your actual medicines and prescription safely.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <h3 class="h6"><i class="bi bi-search text-muted"></i> Google Search</h3>
+          <p class="small text-muted">Surfaces whatever's out there, unsorted by reliability. You have to judge each result yourself, and nothing is checked against your specific medicines together.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-4">
+          <h3 class="h6"><i class="bi bi-chat-dots text-muted"></i> General AI Chatbots</h3>
+          <p class="small text-muted">Can sound confident while being wrong &mdash; general-purpose AI can hallucinate dosages or interactions, and has no particular obligation to protect a prescription photo you share with it.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm p-4 border-primary" style="border-width:2px !important;">
+          <h3 class="h6"><i class="bi bi-shield-check text-primary"></i> KnowUrMed</h3>
+          <p class="small text-muted">Every fact traces to an admin-reviewed record with a source and review date. We show "Information unavailable" instead of guessing, present safety info as structured scannable cards instead of prose, and don't retain your prescription by default.</p>
         </div>
       </div>
     </div>

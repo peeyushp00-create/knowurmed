@@ -140,6 +140,21 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS=[BASE_DIR/'static']
 
+# Uploaded prescription files live here. Deliberately NOT exposed via a public
+# MEDIA_URL/static() route — they are only ever served through the
+# prescription_file_serve view, which checks the requesting user owns the file.
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Maximum upload size for prescription files (bytes).
+PRESCRIPTION_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
+# OCR tool locations (Windows installs aren't reliably on PATH for this process).
+TESSERACT_CMD = os.environ.get('TESSERACT_CMD', r'C:\Program Files\Tesseract-OCR\tesseract.exe')
+POPPLER_PATH = os.environ.get('POPPLER_PATH', '')
+
+# This app's login page is at /login, not Django's default /accounts/login/.
+LOGIN_URL = '/login'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

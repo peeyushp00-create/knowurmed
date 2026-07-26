@@ -4,7 +4,39 @@
 <div class="container">
 
 <h1 class="mb-1">Welcome{% if profile %}, {{ profile.user_id.username }}{% endif %}</h1>
-<p class="mb-4"><a href="{% url 'search_med' %}" class="btn btn-outline-primary btn-sm">Search Medicines</a></p>
+<p class="mb-4 d-flex gap-2 flex-wrap">
+  <a href="{% url 'search_med' %}" class="btn btn-outline-primary btn-sm">Search Medicines</a>
+  <a href="{% url 'prescription_upload' %}" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Upload Prescription</a>
+</p>
+
+<div class="card shadow-sm border-0 p-4 mb-4">
+<h2 class="h4 mb-3">My Prescriptions</h2>
+<div class="table-responsive">
+<table class="table table-bordered align-middle mb-0">
+    <tr>
+        <th>Uploaded</th>
+        <th>Status</th>
+        <th>Medicines Detected</th>
+        <th></th>
+    </tr>
+    {% for p in prescriptions %}
+    <tr>
+        <td>{{ p.created_at|date:"d M Y, H:i" }}</td>
+        <td>
+            {% if p.status == 'confirmed' %}<span class="badge bg-success">Confirmed</span>
+            {% elif p.status == 'failed' %}<span class="badge bg-danger">Failed</span>
+            {% elif p.status == 'needs_review' %}<span class="badge bg-warning text-dark">Needs Review</span>
+            {% else %}<span class="badge bg-secondary">{{ p.get_status_display }}</span>{% endif %}
+        </td>
+        <td>{{ p.items.count }}</td>
+        <td><a href="{% url 'prescription_review' p.id %}" class="btn btn-outline-primary btn-sm">Review</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="text-center">You haven't uploaded a prescription yet.</td></tr>
+    {% endfor %}
+</table>
+</div>
+</div>
 
 <div class="card shadow-sm border-0 p-4 mb-4">
 <h2 class="h4 mb-3">Book an Appointment</h2>

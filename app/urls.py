@@ -54,4 +54,9 @@ path('search_med/autocomplete/',views.search_med_autocomplete,name='search_med_a
 path('submit_complaint/',views.submit_complaint,name='submit_complaint'),
 path('submit_feedback/',views.submit_feedback,name='submit_feedback'),
 
+path('prescription/upload/',views.prescription_upload,name='prescription_upload'),
+path('prescription/<int:prescription_id>/review/',views.prescription_review,name='prescription_review'),
+path('prescription/<int:prescription_id>/delete/',views.prescription_delete,name='prescription_delete'),
+path('prescription/file/<int:file_id>/',views.prescription_file_serve,name='prescription_file_serve'),
+
 ]

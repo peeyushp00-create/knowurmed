@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -107,6 +109,66 @@ class Appointment(models.Model):
     date= models.CharField(max_length=255)
     time = models.CharField(max_length=255)
     status = models.CharField(max_length=50)
+
+
+def prescription_file_path(instance, filename):
+    return f"prescriptions/{instance.prescription_id}/{uuid.uuid4().hex}_{filename}"
+
+
+class Prescription(models.Model):
+    STATUS_CHOICES = [
+        ('uploaded', 'Uploaded'),
+        ('processing', 'Processing'),
+        ('needs_review', 'Needs Review'),
+        ('confirmed', 'Confirmed'),
+        ('failed', 'Failed'),
+    ]
+
+    patient = models.ForeignKey(USER, on_delete=models.CASCADE, related_name='prescriptions')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='uploaded')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Prescription #{self.pk} ({self.patient.user_id.username})"
+
+
+class PrescriptionFile(models.Model):
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='files')
+    file = models.FileField(upload_to=prescription_file_path)
+    original_filename = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    size_bytes = models.PositiveIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
+class OCRResult(models.Model):
+    prescription_file = models.OneToOneField(PrescriptionFile, on_delete=models.CASCADE, related_name='ocr_result')
+    raw_text = models.TextField(blank=True)
+    confidence = models.FloatField(default=0)
+    engine = models.CharField(max_length=50, default='tesseract')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PrescriptionItem(models.Model):
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='items')
+    detected_name = models.CharField(max_length=255, blank=True)
+    detected_strength = models.CharField(max_length=100, blank=True)
+    detected_form = models.CharField(max_length=100, blank=True)
+    detected_frequency = models.CharField(max_length=100, blank=True)
+    detected_duration = models.CharField(max_length=100, blank=True)
+    ocr_confidence = models.FloatField(default=0)
+    matched_medicine = models.ForeignKey(MEDICINE, on_delete=models.SET_NULL, null=True, blank=True)
+    is_confirmed = models.BooleanField(default=False)
+    is_edited = models.BooleanField(default=False)
+    is_manual = models.BooleanField(default=False)
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['position', 'id']
+
+    def __str__(self):
+        return self.detected_name or "(manual entry)"
 
 
 class complaints (models.Model):

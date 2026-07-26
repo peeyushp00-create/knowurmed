@@ -1,12 +1,18 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.http import FileResponse, Http404, JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
 
-from .models import Category, DOCTOR, USER, MEDICINE, Appointment
+from . import ocr
+from .models import (
+    Category, DOCTOR, USER, MEDICINE, Appointment,
+    Prescription, PrescriptionFile, PrescriptionItem,
+)
 from .models import complaints as Complaint, feedback as Feedback
 
 
@@ -290,6 +296,7 @@ def user_home(request):
         'appointments': Appointment.objects.filter(user=profile).order_by('-id') if profile else [],
         'complaint_list': Complaint.objects.filter(user=profile).order_by('-id') if profile else [],
         'feedback_list': Feedback.objects.filter(user=profile).order_by('-id') if profile else [],
+        'prescriptions': Prescription.objects.filter(patient=profile).order_by('-created_at') if profile else [],
     }
     return render(request, 'user_home.html', context)
 
@@ -359,4 +366,177 @@ def submit_feedback(request):
                 date=timezone.now().strftime('%Y-%m-%d'),
             )
             messages.success(request, 'Feedback submitted')
+    return redirect('user_home')
+
+
+ALLOWED_PRESCRIPTION_TYPES = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.pdf': 'application/pdf',
+}
+
+
+def _validate_prescription_upload(uploaded_file):
+    import os
+    ext = os.path.splitext(uploaded_file.name)[1].lower()
+    content_type = ALLOWED_PRESCRIPTION_TYPES.get(ext)
+    if not content_type:
+        return None, 'Unsupported file type. Please upload a JPG, PNG, or PDF.'
+
+    if uploaded_file.size > settings.PRESCRIPTION_MAX_UPLOAD_SIZE:
+        return None, 'File is too large. Maximum size is 10 MB.'
+
+    header = uploaded_file.read(8)
+    uploaded_file.seek(0)
+    if content_type == 'application/pdf':
+        if not header.startswith(b'%PDF'):
+            return None, 'This file does not look like a valid PDF.'
+    else:
+        try:
+            from PIL import Image
+            img = Image.open(uploaded_file)
+            img.verify()
+            uploaded_file.seek(0)
+        except Exception:
+            return None, 'This file does not look like a valid image.'
+
+    return content_type, None
+
+
+@login_required
+def prescription_upload(request):
+    if request.method == "POST":
+        profile = USER.objects.filter(user_id=request.user).first()
+        if not profile:
+            messages.error(request, 'Only patient accounts can upload prescriptions.')
+            return redirect('home')
+
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            messages.error(request, 'Please choose a file to upload.')
+            return redirect('prescription_upload')
+
+        content_type, error = _validate_prescription_upload(uploaded_file)
+        if error:
+            messages.error(request, error)
+            return redirect('prescription_upload')
+
+        prescription = Prescription.objects.create(patient=profile, status='processing')
+        prescription_file = PrescriptionFile.objects.create(
+            prescription=prescription,
+            file=uploaded_file,
+            original_filename=uploaded_file.name,
+            content_type=content_type,
+            size_bytes=uploaded_file.size,
+        )
+
+        try:
+            ocr_result = ocr.process_prescription_file(prescription_file)
+            prescription.status = 'needs_review'
+            if ocr_result.confidence < ocr.LOW_CONFIDENCE_THRESHOLD or not prescription.items.exists():
+                messages.warning(
+                    request,
+                    "We couldn't read this prescription clearly. Please add your medicines manually below.",
+                )
+        except Exception:
+            prescription.status = 'failed'
+            messages.error(
+                request,
+                'We were unable to process this file. Please try a clearer photo or a different format.',
+            )
+        prescription.save()
+
+        return redirect('prescription_review', prescription_id=prescription.id)
+
+    return render(request, 'prescription_upload.html')
+
+
+@login_required
+def prescription_review(request, prescription_id):
+    profile = USER.objects.filter(user_id=request.user).first()
+    prescription = get_object_or_404(Prescription, pk=prescription_id)
+    if not profile or prescription.patient_id != profile.id:
+        raise Http404
+
+    if request.method == "POST":
+        action = request.POST.get('action')
+
+        if action == 'update_item':
+            item = get_object_or_404(PrescriptionItem, pk=request.POST.get('item_id'), prescription=prescription)
+            item.detected_name = request.POST.get('detected_name', item.detected_name)
+            item.detected_strength = request.POST.get('detected_strength', item.detected_strength)
+            item.detected_form = request.POST.get('detected_form', item.detected_form)
+            item.detected_frequency = request.POST.get('detected_frequency', item.detected_frequency)
+            item.detected_duration = request.POST.get('detected_duration', item.detected_duration)
+            item.is_edited = True
+            item.is_confirmed = True
+            item.save()
+            messages.success(request, 'Medicine updated and confirmed.')
+
+        elif action == 'confirm_item':
+            item = get_object_or_404(PrescriptionItem, pk=request.POST.get('item_id'), prescription=prescription)
+            item.is_confirmed = True
+            item.save()
+
+        elif action == 'remove_item':
+            PrescriptionItem.objects.filter(pk=request.POST.get('item_id'), prescription=prescription).delete()
+            messages.success(request, 'Medicine removed from this prescription.')
+
+        elif action == 'add_manual':
+            name = request.POST.get('manual_name', '').strip()
+            if name:
+                PrescriptionItem.objects.create(
+                    prescription=prescription,
+                    detected_name=name,
+                    detected_strength=request.POST.get('manual_strength', ''),
+                    detected_frequency=request.POST.get('manual_frequency', ''),
+                    detected_duration=request.POST.get('manual_duration', ''),
+                    matched_medicine=ocr.match_medicine(name),
+                    is_manual=True,
+                    is_confirmed=True,
+                    position=prescription.items.count(),
+                )
+                messages.success(request, 'Medicine added.')
+
+        elif action == 'confirm_all':
+            if prescription.items.exists() and not prescription.items.filter(is_confirmed=False).exists():
+                prescription.status = 'confirmed'
+                prescription.save()
+                messages.success(request, 'All medicines confirmed.')
+            else:
+                messages.error(request, 'Please confirm or remove every detected medicine first.')
+
+        return redirect('prescription_review', prescription_id=prescription.id)
+
+    prescription_file = prescription.files.order_by('-uploaded_at').first()
+    context = {
+        'prescription': prescription,
+        'prescription_file': prescription_file,
+        'ocr_result': getattr(prescription_file, 'ocr_result', None) if prescription_file else None,
+        'items': prescription.items.all(),
+        'all_confirmed': prescription.items.exists() and not prescription.items.filter(is_confirmed=False).exists(),
+    }
+    return render(request, 'prescription_review.html', context)
+
+
+@login_required
+def prescription_file_serve(request, file_id):
+    profile = USER.objects.filter(user_id=request.user).first()
+    prescription_file = get_object_or_404(PrescriptionFile, pk=file_id)
+    if not profile or prescription_file.prescription.patient_id != profile.id:
+        raise Http404
+    return FileResponse(prescription_file.file.open('rb'), content_type=prescription_file.content_type)
+
+
+@login_required
+def prescription_delete(request, prescription_id):
+    if request.method == "POST":
+        profile = USER.objects.filter(user_id=request.user).first()
+        prescription = get_object_or_404(Prescription, pk=prescription_id)
+        if profile and prescription.patient_id == profile.id:
+            prescription.delete()
+            messages.success(request, 'Prescription deleted.')
+        else:
+            raise Http404
     return redirect('user_home')

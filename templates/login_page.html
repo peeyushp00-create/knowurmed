@@ -72,6 +72,12 @@
                           </div>
                           <button type="submit" class="btn btn-primary w-100">Login</button>
                       </form>
+                      <hr class="my-4">
+                      <p class="text-center mb-2">Don't have an account yet?</p>
+                      <div class="d-flex flex-column gap-2">
+                          <a href="{% url 'registration' %}" class="btn btn-outline-primary w-100">Register as a Patient</a>
+                          <a href="{% url 'doc_reg' %}" class="btn btn-outline-secondary w-100">Register as a Doctor</a>
+                      </div>
               </div>
             </div>
           </div>

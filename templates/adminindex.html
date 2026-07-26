@@ -237,17 +237,17 @@
                 <p class="welcome-subtitle">Here's what's happening with your medicine information system today.</p>
 
                 <div class="quick-actions">
-                    <a href="/admin/fields/add/" class="quick-action-btn">
+                    <a href="{% url 'add_med' %}" class="quick-action-btn">
                         <i class="fas fa-plus"></i>
-                        Add New Field
+                        Add Medicine
                     </a>
-                    <a href="/admin/bookings/" class="quick-action-btn">
+                    <a href="{% url 'appoint_manage' %}" class="quick-action-btn">
                         <i class="fas fa-calendar"></i>
                         View Bookings
                     </a>
-                    <a href="/admin/reports/" class="quick-action-btn">
-                        <i class="fas fa-chart-bar"></i>
-                        Generate Report
+                    <a href="{% url 'manage_doctor' %}" class="quick-action-btn">
+                        <i class="fas fa-user-md"></i>
+                        Review Doctors
                     </a>
                 </div>
             </div>

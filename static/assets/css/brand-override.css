@@ -1,0 +1,49 @@
+/*
+ * Brand color override: makes plain Bootstrap utility classes (.btn-primary,
+ * .text-primary, .bg-primary, .border-primary, link color) match this site's
+ * actual brand teal (--accent-color in main.css, #099aa7), which is already
+ * used throughout the admin dashboard and the MediNest theme's own components.
+ * Bootstrap 5.3's .btn-primary etc. hardcode their own local custom properties
+ * rather than reading the global --bs-primary variable, so those need to be
+ * set explicitly here rather than just overriding :root.
+ */
+
+:root {
+  --bs-primary: #099aa7;
+  --bs-primary-rgb: 9, 154, 167;
+  --bs-link-color: #099aa7;
+  --bs-link-color-rgb: 9, 154, 167;
+  --bs-link-hover-color: #077e89;
+  --bs-link-hover-color-rgb: 7, 126, 137;
+}
+
+.btn-primary {
+  --bs-btn-bg: #099aa7;
+  --bs-btn-border-color: #099aa7;
+  --bs-btn-hover-bg: #087f8a;
+  --bs-btn-hover-border-color: #077e89;
+  --bs-btn-active-bg: #076d76;
+  --bs-btn-active-border-color: #066a73;
+  --bs-btn-disabled-bg: #099aa7;
+  --bs-btn-disabled-border-color: #099aa7;
+  --bs-btn-focus-shadow-rgb: 9, 154, 167;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #099aa7;
+  --bs-btn-border-color: #099aa7;
+  --bs-btn-hover-bg: #099aa7;
+  --bs-btn-hover-border-color: #099aa7;
+  --bs-btn-active-bg: #099aa7;
+  --bs-btn-active-border-color: #099aa7;
+  --bs-btn-disabled-color: #099aa7;
+  --bs-btn-disabled-border-color: #099aa7;
+  --bs-btn-focus-shadow-rgb: 9, 154, 167;
+}
+
+.text-primary { color: #099aa7 !important; }
+.border-primary { border-color: #099aa7 !important; }
+.bg-primary { background-color: #099aa7 !important; }
+
+a { color: #099aa7; }
+a:hover { color: #077e89; }

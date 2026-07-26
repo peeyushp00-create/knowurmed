@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Index - knowurmed</title>
-  <meta name="description" content="">
+  <title>KnowURmed — Doctor Portal</title>
+  <meta name="description" content="Manage your appointments, schedule, and patient communications.">
   <meta name="keywords" content="">
 
   <!-- Favicons -->
@@ -27,6 +27,7 @@
 
   <!-- Main CSS File -->
   <link href="/static/assets/css/main.css" rel="stylesheet">
+  <link href="/static/assets/css/brand-override.css" rel="stylesheet">
 
   <!-- =======================================================
   * Template Name: MediNest
@@ -42,7 +43,7 @@
   <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container position-relative d-flex align-items-center justify-content-between">
 
-      <a href="index.html" class="logo d-flex align-items-center me-auto me-xl-0">
+      <a href="{% url 'doctor_home' %}" class="logo d-flex align-items-center me-auto me-xl-0">
         <!-- Uncomment the line below if you also wish to use an image logo -->
         <!-- <img src="/static/assets/img/logo.webp" alt=""> -->
         <h1 class="sitename">knowU<span>Rmed</span></h1>

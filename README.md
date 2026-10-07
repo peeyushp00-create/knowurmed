@@ -28,6 +28,10 @@ python manage.py runserver
 
 Open the link printed after **"Starting development server at"** in your terminal and log in with the admin account you created. New patients and doctors register from the site and appear in the admin dashboard for approval.
 
+## Screenshots
+
+![Medicine search showing Paracetamol with its safety summary](screenshot/search.png)
+
 ## Features
 
 - **Medicine search with autocomplete**: by brand or generic name, with composition, dosage, side effects, precautions, and guidance on food, driving, pregnancy, breastfeeding, kidney and liver conditions, storage, missed doses, serious warning signs and sources.

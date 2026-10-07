@@ -17,7 +17,7 @@ from app.models import Prescription, PrescriptionItem
 
 from .helpers import PASSWORD, make_medicine, make_patient
 
-SAMPLE = Path(settings.BASE_DIR) / 'docs' / 'samples' / 'sample-prescription.png'
+SAMPLE = Path(__file__).parent / 'data' / 'sample-prescription.png'
 
 
 def png_bytes():

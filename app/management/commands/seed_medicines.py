@@ -321,7 +321,7 @@ MEDICINES = [
 
 
 class Command(BaseCommand):
-    help = "Seed the database with sample medicine records and safety notes for development/demo purposes."
+    help = "Seed the database with sample medicine records and safety notes for development."
 
     def handle(self, *args, **options):
         created_count = 0

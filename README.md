@@ -9,9 +9,9 @@ KnowUrMed explains medicines and prescriptions in plain language. Search a medic
 
 > **Medical disclaimer.** KnowUrMed is an educational tool. It does not diagnose, prescribe or replace professional advice. Always confirm dosing and interactions with your doctor or pharmacist. Where verified information isn't available, the site says "Information unavailable" rather than guessing.
 
-## Try it in 2 minutes
+## Run it locally
 
-You need **Python 3.12 or newer** ([python.org](https://www.python.org/downloads/) — on Windows, tick *"Add Python to PATH"* during install).
+You need **Python 3.12 or newer** ([python.org](https://www.python.org/downloads/) — on Windows, tick *"Add Python to PATH"* during install). No database server is needed: it uses SQLite.
 
 ```bash
 git clone https://github.com/peeyushp00-create/knowurmed.git
@@ -20,21 +20,13 @@ python -m venv .venv
 .venv\Scripts\activate            # Windows
 # source .venv/bin/activate       # macOS / Linux
 pip install -r requirements.txt
-python manage.py setup_demo
+python manage.py migrate
+python manage.py seed_medicines    # loads the medicine catalog
+python manage.py createsuperuser   # your admin account
 python manage.py runserver
 ```
 
-Open **http://127.0.0.1:8000/** and sign in at **/login** with any of the demo accounts:
-
-| Username | Password | What you can do |
-| --- | --- | --- |
-| `patient` | `KnowUrMed-demo` | Search medicines, upload a prescription, book an appointment, send feedback |
-| `doctor` | `KnowUrMed-demo` | See and approve your appointments, your schedule, the medicine reference |
-| `admin` | `KnowUrMed-demo` | Approve new patients and doctors, manage medicines, answer complaints |
-
-No database server or extra software is needed: the demo uses SQLite. To try prescription reading, upload [`docs/samples/sample-prescription.png`](docs/samples/sample-prescription.png) as the patient.
-
-`setup_demo` only runs in debug mode, because the demo accounts have a published password.
+Open the link printed after **"Starting development server at"** in your terminal and log in with the admin account you created. New patients and doctors register from the site and appear in the admin dashboard for approval.
 
 ## Features
 
@@ -68,7 +60,7 @@ On Windows, Tesseract's default install folder is found automatically. If yours 
 python manage.py test
 ```
 
-The suite covers the who-can-open-what table for every page and role, registration and login (including approval and password rules), medicine search, appointments, complaints and feedback, prescription upload validation, the review flow, privacy between patients, the OCR parser, a real OCR run on the sample prescription (skipped when Tesseract isn't installed), and the demo setup. GitHub Actions runs it on Linux and Windows with Python 3.12 and 3.13, along with `ruff` and a check for missing migrations.
+The suite covers the who-can-open-what table for every page and role, registration and login (including approval and password rules), medicine search, appointments, complaints and feedback, prescription upload validation, the review flow, privacy between patients, the OCR parser, and a real OCR run on a sample prescription (skipped when Tesseract isn't installed). GitHub Actions runs it on Linux and Windows with Python 3.12 and 3.13, along with `ruff` and a check for missing migrations.
 
 ## Configuration
 
@@ -78,7 +70,7 @@ Everything works without configuration for local use. To change settings, copy `
 | --- | --- | --- |
 | `DJANGO_DEBUG` | `True` | Set to `False` in production |
 | `DJANGO_SECRET_KEY` | dev-only key | **Required** when debug is off |
-| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` in debug | Comma-separated host names |
+| `DJANGO_ALLOWED_HOSTS` | your own computer, in debug | Comma-separated host names |
 | `DB_ENGINE` | SQLite | Set to `mysql` (and the `DB_*` values, plus `pip install mysqlclient`) to use MySQL |
 | `TESSERACT_CMD`, `POPPLER_PATH` | auto-detected | OCR tool locations |
 

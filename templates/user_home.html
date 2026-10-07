@@ -51,7 +51,7 @@
     {% for doctor in doctors %}
     <tr>
         <td>{{ doctor.Name }}</td>
-        <td>{{ doctor.Specaialization }}</td>
+        <td>{{ doctor.Specialization }}</td>
         <td>
             <form method="post" action="{% url 'book_appointment' %}" class="d-flex gap-2 flex-wrap">
                 {% csrf_token %}

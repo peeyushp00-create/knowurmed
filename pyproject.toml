@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 120
+extend-exclude = ["app/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Medicine reference text is kept as one readable line per field.
+"app/management/commands/seed_medicines.py" = ["E501"]

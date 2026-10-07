@@ -30,11 +30,23 @@ project/
 
 Three Django `Group`s gate three dashboards:
 
-- `admin` — full site administration (medicines, doctor/patient approval, appointments, complaints, feedback)
-- `docter` — doctor dashboard (appointment management, schedule, medicine reference, complaints/feedback review, password change)
-- `user` — patient dashboard (booking, medicine search, complaints, feedback)
+- `admin` (or any superuser): full site administration (medicines, doctor/patient approval, appointments, complaints, feedback)
+- `doctor`: doctor dashboard (own appointments, schedule, medicine reference, complaints/feedback review, password change)
+- `patient`: patient dashboard (booking, complaints, feedback, prescription upload and review)
 
 `USER` and `DOCTOR` models both carry an `Approval_Status` field (Pending/Approved/Rejected); the `login` view checks this before allowing sign-in for those roles, so admin approval is required for both patient and doctor accounts.
+
+Access control lives in `app/permissions.py`. Every non-public view is wrapped in `@role_required(...)`:
+
+| Visitor | Result |
+| --- | --- |
+| Not logged in | Redirected to `/login?next=...` |
+| Logged in, wrong role | `403` page with a link back to their own dashboard |
+| Doctor/patient no longer approved | Logged out and sent to the login page (checked on every request) |
+
+Doctors only see and change their own appointments. Prescriptions, their files and their review screens are only reachable by the patient who uploaded them; anyone else gets a `404`, so the existence of another patient's prescription isn't revealed. Actions that change data (booking, complaints, feedback, deleting a prescription) only accept `POST`.
+
+The full who-can-open-what table is tested in `app/tests/test_access.py`.
 
 ## Data model (current)
 
@@ -57,7 +69,7 @@ All medicine safety data is **admin-curated**, not pulled from a live external d
 
 Two design systems coexist:
 
-- `header.html` / `footer.html` / `docter_header.html` — a Bootstrap 5 theme ("MediNest") used for the landing page, medicine search, patient dashboard, and doctor dashboard.
+- `header.html` / `footer.html` / `doctor_header.html` — a Bootstrap 5 theme ("MediNest") used for the landing page, medicine search, patient dashboard, and doctor dashboard.
 - `admin_header.html` / `admin_footer.html` — a custom sidebar admin shell with its own CSS variables and component classes (`.panel`, `.data-table`, `.status-badge`, `.btn-*`), used only for admin pages.
 
 `templates/_safety_status_card.html` is a reusable partial for rendering one `MedicineSafetyNote` as a card; `app/templatetags/safety_extras.py` provides the template filters that map status values to Bootstrap color classes and compute the overall (non-numeric) safety result for a medicine.

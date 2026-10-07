@@ -1,19 +1,80 @@
+import os
+
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, update_session_auth_hash
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth.models import Group, User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db.models import Q
-from django.http import FileResponse, Http404, JsonResponse
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib.auth.models import User, Group
+from django.http import FileResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from . import ocr
 from .models import (
-    Category, DOCTOR, USER, MEDICINE, Appointment,
-    Prescription, PrescriptionFile, PrescriptionItem,
+    DOCTOR,
+    MEDICINE,
+    USER,
+    Appointment,
+    Prescription,
+    PrescriptionFile,
+    PrescriptionItem,
 )
-from .models import complaints as Complaint, feedback as Feedback
+from .models import complaints as Complaint
+from .models import feedback as Feedback
+from .permissions import (
+    ADMIN,
+    DOCTOR_GROUP,
+    HOME_FOR_ROLE,
+    PATIENT,
+    PATIENT_GROUP,
+    is_approved,
+    role_profile,
+    role_required,
+    user_role,
+)
+from .permissions import (
+    DOCTOR as DOCTOR_ROLE,
+)
+
+# ---------------------------------------------------------------- helpers
+
+
+def _patient_profile(request):
+    return USER.objects.filter(user_id=request.user).first()
+
+
+def _registration_errors(data, required, password, confirm=None, user=None):
+    """Validate a registration form; returns a list of messages (empty = valid)."""
+    errors = []
+    missing = [label for field, label in required if not data.get(field, '').strip()]
+    if missing:
+        errors.append(f"Please fill in: {', '.join(missing)}.")
+    username = data.get('username', '').strip()
+    if username and User.objects.filter(username__iexact=username).exists():
+        errors.append('That username is already taken.')
+    email = data.get('email', '').strip()
+    if email:
+        try:
+            validate_email(email)
+        except ValidationError:
+            errors.append('Please enter a valid email address.')
+    if confirm is not None and password != confirm:
+        errors.append('Passwords do not match.')
+    if password:
+        try:
+            validate_password(password, user=user)
+        except ValidationError as err:
+            errors.extend(err.messages)
+    return errors
+
+
+# ---------------------------------------------------------------- public pages
 
 
 def home(request):
@@ -22,42 +83,31 @@ def home(request):
 
 def login(request):
     if request.method == "POST":
-        uname = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=uname, password=password)
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            messages.error(request, 'Username or password incorrect.')
+            return render(request, 'login_page.html', status=401)
 
-        if user is not None:
-            if user.is_superuser or user.groups.filter(name='admin').exists():
-                auth_login(request, user)
-                return redirect('adminindex')
-
-            elif user.groups.filter(name='docter').exists():
-                doctor = DOCTOR.objects.filter(user_id=user).first()
-                if doctor is None:
-                    messages.error(request, 'Doctor profile not found')
-                    return redirect('login')
-                if doctor.Approval_Status == 'Approved':
-                    auth_login(request, user)
-                    return redirect('doctor_home')
+        role = user_role(user)
+        if role is None:
+            messages.error(request, 'This account has no role assigned. Please contact the administrator.')
+            return redirect('login')
+        if role != ADMIN:
+            profile = role_profile(user, role)
+            if profile is None:
+                messages.error(request, 'Account profile not found. Please contact the administrator.')
+                return redirect('login')
+            if profile.Approval_Status == 'Rejected':
+                messages.error(request, 'Your registration was not approved.')
+                return redirect('login')
+            if not is_approved(user, role):
                 messages.error(request, 'Your registration is pending approval.')
                 return redirect('login')
 
-            elif user.groups.filter(name='user').exists():
-                profile = USER.objects.filter(user_id=user).first()
-                if profile is None:
-                    messages.error(request, 'User profile not found')
-                    return redirect('login')
-                if profile.Approval_Status == 'Approved':
-                    auth_login(request, user)
-                    return redirect('user_home')
-                messages.error(request, 'Your registration is pending approval.')
-                return redirect('login')
-
-            else:
-                messages.error(request, 'Invalid username or password')
-                return redirect('login')
-        else:
-            messages.error(request, 'Username or password incorrect')
+        auth_login(request, user)
+        return redirect(HOME_FOR_ROLE[role])
     return render(request, 'login_page.html')
 
 
@@ -68,38 +118,34 @@ def logout_view(request):
 
 def registration(request):
     if request.method == "POST":
-        username = request.POST['username']
-        gender = request.POST['gender']
-        age = request.POST['age']
-        place = request.POST['place']
-        email = request.POST['email']
-        phone = request.POST['phone']
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
-
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match')
+        data = request.POST
+        password = data.get('password', '')
+        required = [
+            ('username', 'username'), ('email', 'email'), ('phone', 'phone'), ('age', 'age'),
+            ('gender', 'gender'), ('place', 'place'), ('password', 'password'),
+        ]
+        errors = _registration_errors(data, required, password, data.get('confirm_password', ''))
+        age = data.get('age', '').strip()
+        if age and (not age.isdigit() or not 0 < int(age) < 130):
+            errors.append('Please enter a valid age.')
+        if errors:
+            for error in errors:
+                messages.error(request, error)
             return redirect('registration')
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists')
-            return redirect('registration')
-
-        user = User.objects.create_user(username=username, password=password, email=email)
-
-        group, _ = Group.objects.get_or_create(name='user')
-        user.groups.add(group)
-
+        user = User.objects.create_user(
+            username=data['username'].strip(), password=password, email=data['email'].strip(),
+        )
+        user.groups.add(Group.objects.get_or_create(name=PATIENT_GROUP)[0])
         USER.objects.create(
             user_id=user,
             Age=age,
-            Gender=gender,
-            phone=phone,
-            email=email,
-            Place=place,
+            Gender=data['gender'],
+            phone=data['phone'].strip(),
+            email=data['email'].strip(),
+            Place=data['place'].strip(),
             Approval_Status='Pending',
         )
-
         messages.success(request, 'Registration completed. Please wait for admin approval.')
         return redirect('login')
 
@@ -108,49 +154,83 @@ def registration(request):
 
 def doc_reg(request):
     if request.method == "POST":
-        username = request.POST['username']
-        name = request.POST['name']
-        email = request.POST['email']
-        phone = request.POST['phone']
-        specialization = request.POST['specialization']
-        password = request.POST['password']
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists')
+        data = request.POST
+        password = data.get('password', '')
+        required = [
+            ('username', 'username'), ('name', 'name'), ('email', 'email'), ('phone', 'phone'),
+            ('specialization', 'specialization'), ('password', 'password'),
+        ]
+        confirm = data.get('confirm_password') if 'confirm_password' in data else None
+        errors = _registration_errors(data, required, password, confirm)
+        if errors:
+            for error in errors:
+                messages.error(request, error)
             return redirect('doc_reg')
 
-        user = User.objects.create_user(username=username, password=password, email=email)
-
-        group, _ = Group.objects.get_or_create(name='docter')
-        user.groups.add(group)
-
+        user = User.objects.create_user(
+            username=data['username'].strip(), password=password, email=data['email'].strip(),
+        )
+        user.groups.add(Group.objects.get_or_create(name=DOCTOR_GROUP)[0])
         DOCTOR.objects.create(
             user_id=user,
-            Name=name,
-            Specaialization=specialization,
-            Phone=phone,
-            Email=email,
+            Name=data['name'].strip(),
+            Specialization=data['specialization'].strip(),
+            Phone=data['phone'].strip(),
+            Email=data['email'].strip(),
             Approval_Status='Pending',
         )
-
         messages.success(request, 'Registration completed. Please wait for admin approval.')
         return redirect('login')
 
     return render(request, 'doc_reg.html')
 
 
+def search_med(request):
+    query = request.GET.get('q', '').strip()
+    if query:
+        medicines = MEDICINE.objects.filter(
+            Q(Medicine_name__icontains=query) | Q(Generic_Name__icontains=query)
+        ).prefetch_related('safety_notes').order_by('Medicine_name')
+    else:
+        medicines = MEDICINE.objects.none()
+    return render(request, 'search_med.html', {'medicines': medicines, 'query': query})
+
+
+def search_med_autocomplete(request):
+    query = request.GET.get('q', '').strip()
+    results = []
+    if len(query) >= 2:
+        matches = MEDICINE.objects.filter(
+            Q(Medicine_name__icontains=query) | Q(Generic_Name__icontains=query)
+        ).order_by('Medicine_name')[:8]
+        results = [
+            {'name': m.Medicine_name, 'generic_name': m.Generic_Name, 'category': m.category}
+            for m in matches
+        ]
+    return JsonResponse({'results': results})
+
+
+# ---------------------------------------------------------------- admin
+
+
+@role_required(ADMIN)
 def adminindex(request):
     return render(request, 'adminindex.html')
 
 
+@role_required(ADMIN)
 def add_med(request):
     if request.method == "POST":
         if request.POST.get('action') == 'delete':
             MEDICINE.objects.filter(pk=request.POST.get('id')).delete()
             messages.success(request, 'Medicine deleted')
         else:
+            name = request.POST.get('medicine_name', '').strip()
+            if not name:
+                messages.error(request, 'Medicine name is required.')
+                return redirect('add_med')
             MEDICINE.objects.create(
-                Medicine_name=request.POST.get('medicine_name', ''),
+                Medicine_name=name,
                 Generic_Name=request.POST.get('generic_name', ''),
                 Composition=request.POST.get('composition', ''),
                 Indications=request.POST.get('indications', ''),
@@ -166,40 +246,33 @@ def add_med(request):
     return render(request, 'add_med.html', {'medicines': MEDICINE.objects.all()})
 
 
+def _set_status(request, model, ok_message_by_action, redirect_to):
+    obj = model.objects.filter(pk=request.POST.get('id')).first()
+    action = request.POST.get('action')
+    new_status = {'approve': 'Approved', 'reject': 'Rejected'}.get(action)
+    if obj and new_status:
+        obj.Approval_Status = new_status
+        obj.save(update_fields=['Approval_Status'])
+        messages.success(request, ok_message_by_action[action])
+    return redirect(redirect_to)
+
+
+@role_required(ADMIN)
 def manage_doctor(request):
     if request.method == "POST":
-        doctor = DOCTOR.objects.filter(pk=request.POST.get('id')).first()
-        action = request.POST.get('action')
-        if doctor and action == 'approve':
-            doctor.Approval_Status = 'Approved'
-            doctor.save()
-            messages.success(request, 'Doctor approved')
-        elif doctor and action == 'reject':
-            doctor.Approval_Status = 'Rejected'
-            doctor.save()
-            messages.success(request, 'Doctor rejected')
-        return redirect('manage_doctor')
-
+        labels = {'approve': 'Doctor approved', 'reject': 'Doctor rejected'}
+        return _set_status(request, DOCTOR, labels, 'manage_doctor')
     return render(request, 'manage_doctor.html', {'doctors': DOCTOR.objects.all()})
 
 
+@role_required(ADMIN)
 def view_user(request):
     if request.method == "POST":
-        profile = USER.objects.filter(pk=request.POST.get('id')).first()
-        action = request.POST.get('action')
-        if profile and action == 'approve':
-            profile.Approval_Status = 'Approved'
-            profile.save()
-            messages.success(request, 'User approved')
-        elif profile and action == 'reject':
-            profile.Approval_Status = 'Rejected'
-            profile.save()
-            messages.success(request, 'User rejected')
-        return redirect('view_user')
-
+        return _set_status(request, USER, {'approve': 'User approved', 'reject': 'User rejected'}, 'view_user')
     return render(request, 'view_user.html', {'users': USER.objects.all()})
 
 
+@role_required(ADMIN)
 def complaints(request):
     if request.method == "POST":
         complaint = Complaint.objects.filter(pk=request.POST.get('id')).first()
@@ -212,46 +285,50 @@ def complaints(request):
     return render(request, 'complaints.html', {'complaint_list': Complaint.objects.all().order_by('-id')})
 
 
+@role_required(ADMIN)
 def feedback(request):
     return render(request, 'feedback.html', {'feedback_list': Feedback.objects.all().order_by('-id')})
 
 
+@role_required(ADMIN, DOCTOR_ROLE)
 def appoint_manage(request):
+    # Doctors only ever see and change their own appointments; admins see all.
+    appointments = Appointment.objects.all()
+    if request.role == DOCTOR_ROLE:
+        appointments = appointments.filter(DOCTOR_ID=request.user)
+
     if request.method == "POST":
-        appt = Appointment.objects.filter(pk=request.POST.get('id')).first()
-        action = request.POST.get('action')
-        if appt and action == 'approve':
-            appt.status = 'Approved'
-            appt.save()
-            messages.success(request, 'Appointment approved')
-        elif appt and action == 'decline':
-            appt.status = 'Declined'
-            appt.save()
-            messages.success(request, 'Appointment declined')
+        appt = appointments.filter(pk=request.POST.get('id')).first()
+        new_status = {'approve': 'Approved', 'decline': 'Declined'}.get(request.POST.get('action'))
+        if appt and new_status:
+            appt.status = new_status
+            appt.save(update_fields=['status'])
+            messages.success(request, f'Appointment {new_status.lower()}')
         return redirect('appoint_manage')
 
-    if request.user.is_authenticated and request.user.groups.filter(name='docter').exists():
-        appointments = Appointment.objects.filter(DOCTOR_ID=request.user).order_by('-id')
-    else:
-        appointments = Appointment.objects.all().order_by('-id')
-    return render(request, 'appoint_manage.html', {'appointments': appointments})
+    return render(request, 'appoint_manage.html', {'appointments': appointments.order_by('-id')})
 
 
+# ---------------------------------------------------------------- doctor
+
+
+@role_required(DOCTOR_ROLE)
 def doctor_home(request):
-    return render(request, 'docter_home.html')
+    return render(request, 'doctor_home.html')
 
 
+@role_required(DOCTOR_ROLE)
 def doc_med(request):
     return render(request, 'doc_med.html', {'medicines': MEDICINE.objects.all()})
 
 
+@role_required(DOCTOR_ROLE)
 def schedule(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
     appointments = Appointment.objects.filter(DOCTOR_ID=request.user, status='Approved').order_by('date', 'time')
     return render(request, 'schedule.html', {'appointments': appointments})
 
 
+@role_required(DOCTOR_ROLE)
 def doc_complaint(request):
     if request.method == "POST":
         complaint = Complaint.objects.filter(pk=request.POST.get('id')).first()
@@ -264,10 +341,12 @@ def doc_complaint(request):
     return render(request, 'doc_complaint.html', {'complaint_list': Complaint.objects.all().order_by('-id')})
 
 
+@role_required(DOCTOR_ROLE)
 def doc_feedback(request):
     return render(request, 'doc_feedback.html', {'feedback_list': Feedback.objects.all().order_by('-id')})
 
 
+@role_required(DOCTOR_ROLE)
 def doc_secure(request):
     if request.method == "POST":
         current = request.POST.get('current_password', '')
@@ -279,6 +358,12 @@ def doc_secure(request):
         elif new != confirm:
             messages.error(request, 'New passwords do not match')
         else:
+            try:
+                validate_password(new, user=request.user)
+            except ValidationError as err:
+                for message in err.messages:
+                    messages.error(request, message)
+                return redirect('doc_secure')
             request.user.set_password(new)
             request.user.save()
             update_session_auth_hash(request, request.user)
@@ -288,86 +373,63 @@ def doc_secure(request):
     return render(request, 'doc_secure.html')
 
 
+# ---------------------------------------------------------------- patient
+
+
+@role_required(PATIENT)
 def user_home(request):
-    profile = USER.objects.filter(user_id=request.user).first()
+    profile = _patient_profile(request)
     context = {
         'profile': profile,
         'doctors': DOCTOR.objects.filter(Approval_Status='Approved'),
-        'appointments': Appointment.objects.filter(user=profile).order_by('-id') if profile else [],
-        'complaint_list': Complaint.objects.filter(user=profile).order_by('-id') if profile else [],
-        'feedback_list': Feedback.objects.filter(user=profile).order_by('-id') if profile else [],
-        'prescriptions': Prescription.objects.filter(patient=profile).order_by('-created_at') if profile else [],
+        'appointments': Appointment.objects.filter(user=profile).order_by('-id'),
+        'complaint_list': Complaint.objects.filter(user=profile).order_by('-id'),
+        'feedback_list': Feedback.objects.filter(user=profile).order_by('-id'),
+        'prescriptions': Prescription.objects.filter(patient=profile).order_by('-created_at'),
     }
     return render(request, 'user_home.html', context)
 
 
+@require_POST
+@role_required(PATIENT)
 def book_appointment(request):
-    if request.method == "POST":
-        profile = USER.objects.filter(user_id=request.user).first()
-        doctor_user = User.objects.filter(pk=request.POST.get('doctor_id')).first()
-        if profile and doctor_user:
-            Appointment.objects.create(
-                user=profile,
-                DOCTOR_ID=doctor_user,
-                date=request.POST.get('date', ''),
-                time=request.POST.get('time', ''),
-                status='Pending',
-            )
-            messages.success(request, 'Appointment requested')
+    profile = _patient_profile(request)
+    # Only approved doctors can be booked.
+    doctor = DOCTOR.objects.filter(user_id__pk=request.POST.get('doctor_id'), Approval_Status='Approved').first()
+    date, time = request.POST.get('date', '').strip(), request.POST.get('time', '').strip()
+    if not doctor or not date or not time:
+        messages.error(request, 'Please choose a doctor, a date and a time.')
+        return redirect('user_home')
+    Appointment.objects.create(user=profile, DOCTOR_ID=doctor.user_id, date=date, time=time, status='Pending')
+    messages.success(request, 'Appointment requested')
     return redirect('user_home')
 
 
-def search_med(request):
-    query = request.GET.get('q', '')
-    if query:
-        medicines = MEDICINE.objects.filter(
-            Q(Medicine_name__icontains=query) | Q(Generic_Name__icontains=query)
-        ).prefetch_related('safety_notes').order_by('Medicine_name')
-    else:
-        medicines = MEDICINE.objects.none()
-    return render(request, 'search_med.html', {'medicines': medicines, 'query': query})
-
-
-def search_med_autocomplete(request):
-    query = request.GET.get('q', '')
-    results = []
-    if len(query) >= 2:
-        matches = MEDICINE.objects.filter(
-            Q(Medicine_name__icontains=query) | Q(Generic_Name__icontains=query)
-        ).order_by('Medicine_name')[:8]
-        results = [
-            {'name': m.Medicine_name, 'generic_name': m.Generic_Name, 'category': m.category}
-            for m in matches
-        ]
-    return JsonResponse({'results': results})
-
-
+@require_POST
+@role_required(PATIENT)
 def submit_complaint(request):
-    if request.method == "POST":
-        profile = USER.objects.filter(user_id=request.user).first()
-        if profile:
-            Complaint.objects.create(
-                user=profile,
-                complaints=request.POST.get('complaint', ''),
-                date=timezone.now().strftime('%Y-%m-%d'),
-                reply='',
-            )
-            messages.success(request, 'Complaint submitted')
+    text = request.POST.get('complaint', '').strip()
+    if text:
+        Complaint.objects.create(
+            user=_patient_profile(request), complaints=text, date=timezone.now().strftime('%Y-%m-%d'), reply='',
+        )
+        messages.success(request, 'Complaint submitted')
     return redirect('user_home')
 
 
+@require_POST
+@role_required(PATIENT)
 def submit_feedback(request):
-    if request.method == "POST":
-        profile = USER.objects.filter(user_id=request.user).first()
-        if profile:
-            Feedback.objects.create(
-                user=profile,
-                feedback=request.POST.get('feedback', ''),
-                date=timezone.now().strftime('%Y-%m-%d'),
-            )
-            messages.success(request, 'Feedback submitted')
+    text = request.POST.get('feedback', '').strip()
+    if text:
+        Feedback.objects.create(
+            user=_patient_profile(request), feedback=text, date=timezone.now().strftime('%Y-%m-%d'),
+        )
+        messages.success(request, 'Feedback submitted')
     return redirect('user_home')
 
+
+# ---------------------------------------------------------------- prescriptions (patient only)
 
 ALLOWED_PRESCRIPTION_TYPES = {
     '.jpg': 'image/jpeg',
@@ -378,7 +440,6 @@ ALLOWED_PRESCRIPTION_TYPES = {
 
 
 def _validate_prescription_upload(uploaded_file):
-    import os
     ext = os.path.splitext(uploaded_file.name)[1].lower()
     content_type = ALLOWED_PRESCRIPTION_TYPES.get(ext)
     if not content_type:
@@ -404,14 +465,15 @@ def _validate_prescription_upload(uploaded_file):
     return content_type, None
 
 
-@login_required
+def _own_prescription(request, prescription_id):
+    """The prescription if it belongs to the logged-in patient; 404 otherwise (never 403, to not reveal it exists)."""
+    return get_object_or_404(Prescription, pk=prescription_id, patient=_patient_profile(request))
+
+
+@role_required(PATIENT)
 def prescription_upload(request):
     if request.method == "POST":
-        profile = USER.objects.filter(user_id=request.user).first()
-        if not profile:
-            messages.error(request, 'Only patient accounts can upload prescriptions.')
-            return redirect('home')
-
+        profile = _patient_profile(request)
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
             messages.error(request, 'Please choose a file to upload.')
@@ -431,33 +493,38 @@ def prescription_upload(request):
             size_bytes=uploaded_file.size,
         )
 
-        try:
-            ocr_result = ocr.process_prescription_file(prescription_file)
+        if not ocr.is_available():
             prescription.status = 'needs_review'
-            if ocr_result.confidence < ocr.LOW_CONFIDENCE_THRESHOLD or not prescription.items.exists():
-                messages.warning(
-                    request,
-                    "We couldn't read this prescription clearly. Please add your medicines manually below.",
-                )
-        except Exception:
-            prescription.status = 'failed'
-            messages.error(
+            messages.info(
                 request,
-                'We were unable to process this file. Please try a clearer photo or a different format.',
+                'Automatic reading is not set up on this server, '
+                'so please add the medicines from your prescription below.',
             )
+        else:
+            try:
+                ocr_result = ocr.process_prescription_file(prescription_file)
+                prescription.status = 'needs_review'
+                if ocr_result.confidence < ocr.LOW_CONFIDENCE_THRESHOLD or not prescription.items.exists():
+                    messages.warning(
+                        request,
+                        "We couldn't read this prescription clearly. Please add your medicines manually below.",
+                    )
+            except Exception:
+                prescription.status = 'failed'
+                messages.error(
+                    request,
+                    'We were unable to process this file. Please try a clearer photo or a different format.',
+                )
         prescription.save()
 
         return redirect('prescription_review', prescription_id=prescription.id)
 
-    return render(request, 'prescription_upload.html')
+    return render(request, 'prescription_upload.html', {'ocr_available': ocr.is_available()})
 
 
-@login_required
+@role_required(PATIENT)
 def prescription_review(request, prescription_id):
-    profile = USER.objects.filter(user_id=request.user).first()
-    prescription = get_object_or_404(Prescription, pk=prescription_id)
-    if not profile or prescription.patient_id != profile.id:
-        raise Http404
+    prescription = _own_prescription(request, prescription_id)
 
     if request.method == "POST":
         action = request.POST.get('action')
@@ -520,23 +587,15 @@ def prescription_review(request, prescription_id):
     return render(request, 'prescription_review.html', context)
 
 
-@login_required
+@role_required(PATIENT)
 def prescription_file_serve(request, file_id):
-    profile = USER.objects.filter(user_id=request.user).first()
-    prescription_file = get_object_or_404(PrescriptionFile, pk=file_id)
-    if not profile or prescription_file.prescription.patient_id != profile.id:
-        raise Http404
+    prescription_file = get_object_or_404(PrescriptionFile, pk=file_id, prescription__patient=_patient_profile(request))
     return FileResponse(prescription_file.file.open('rb'), content_type=prescription_file.content_type)
 
 
-@login_required
+@require_POST
+@role_required(PATIENT)
 def prescription_delete(request, prescription_id):
-    if request.method == "POST":
-        profile = USER.objects.filter(user_id=request.user).first()
-        prescription = get_object_or_404(Prescription, pk=prescription_id)
-        if profile and prescription.patient_id == profile.id:
-            prescription.delete()
-            messages.success(request, 'Prescription deleted.')
-        else:
-            raise Http404
+    _own_prescription(request, prescription_id).delete()
+    messages.success(request, 'Prescription deleted.')
     return redirect('user_home')

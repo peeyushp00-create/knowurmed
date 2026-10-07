@@ -11,16 +11,39 @@ for anything downstream.
 import difflib
 import re
 
+import pytesseract
 from django.conf import settings
 from django.db.models import Q
 from PIL import Image
-import pytesseract
 
 pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
 
 LOW_CONFIDENCE_THRESHOLD = 50
 
+_available = None
+
+
+def is_available():
+    """True if the Tesseract program is installed. Checked once per process.
+
+    OCR is optional: without it, uploads still work and the patient adds the
+    medicines by hand on the review screen.
+    """
+    global _available
+    if _available is None:
+        try:
+            pytesseract.get_tesseract_version()
+            _available = True
+        except Exception:
+            _available = False
+    return _available
+
 STRENGTH_RE = re.compile(r'\b\d+(\.\d+)?\s?(mg|mcg|g|ml)\b', re.IGNORECASE)
+# "1. ", "2) ", "- ", "• " list markers and "Tab."/"Cap."/"Syp." dosage-form prefixes before a name.
+LIST_PREFIX_RE = re.compile(
+    r'^\s*(?:\d{1,2}\s*[.)]\s*|[-•*]\s*)?(?:(?:tab|tablet|cap|capsule|syp|syrup|inj)\.?\s+)?',
+    re.IGNORECASE,
+)
 DURATION_RE = re.compile(r'\bfor\s+\d+\s+days?\b', re.IGNORECASE)
 FREQUENCY_PATTERNS = [
     re.compile(r'\b(once|twice|three times|four times)\s+(a\s+)?day\b', re.IGNORECASE),
@@ -108,6 +131,7 @@ def _parse_line(text):
             break
 
     name_guess = text[:strength_match.start()].strip(' ,.-') if strength_match else text.strip()
+    name_guess = LIST_PREFIX_RE.sub('', name_guess).strip(' ,.-')
     return {'name_guess': name_guess, 'strength': strength, 'frequency': frequency, 'duration': duration}
 
 

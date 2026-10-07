@@ -1,7 +1,8 @@
 import uuid
 
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+
 
 class Category(models.Model):
     category_name = models.CharField(max_length=255)
@@ -10,15 +11,11 @@ class Category(models.Model):
 class DOCTOR(models.Model):
     user_id = models.OneToOneField(User,on_delete=models.CASCADE)
     Name = models.CharField(max_length=255)
-    Specaialization = models.CharField(max_length=255)
+    Specialization = models.CharField(max_length=255)
     Phone = models.CharField(max_length=220)
     Email = models.EmailField()
     Approval_Status = models.CharField(max_length=50)
     reason = models.CharField(max_length=255, blank=True, null=True)
-
-
-# class Category(models.Model):
-#     category_name = models.CharField(max_length=255)
 
 
 class USER(models.Model):

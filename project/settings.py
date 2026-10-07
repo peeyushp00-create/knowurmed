@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,15 +29,18 @@ load_dotenv(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 # Falls back to a dev-only key so local setup works without a .env file;
 # always set DJANGO_SECRET_KEY explicitly outside local development.
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-4peo-v@*@_di4d5fqmm7b2ksc1w)oa$2*a!dns&creb*63)t%!',
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h]
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured('Set DJANGO_SECRET_KEY when DJANGO_DEBUG is False.')
+    SECRET_KEY = 'django-insecure-local-development-only'
+
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 
 
 # Application definition
@@ -72,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'app.context_processors.role',
             ],
         },
     },
@@ -83,22 +89,23 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-if os.environ.get('USE_SQLITE'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
+# SQLite works out of the box. Set DB_ENGINE=mysql (plus the DB_* values) to use MySQL.
+if os.environ.get('DB_ENGINE', '').lower() == 'mysql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': os.environ.get('DB_NAME', 'knowurmed'),
             'USER': os.environ.get('DB_USER', 'root'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'root'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '3306'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 
@@ -148,8 +155,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Maximum upload size for prescription files (bytes).
 PRESCRIPTION_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
 
-# OCR tool locations (Windows installs aren't reliably on PATH for this process).
-TESSERACT_CMD = os.environ.get('TESSERACT_CMD', r'C:\Program Files\Tesseract-OCR\tesseract.exe')
+# OCR tool locations. Optional: without Tesseract, uploads still work and the
+# patient types the medicines in by hand. On Windows the installer doesn't put
+# tesseract on PATH, so its default install location is used if it exists.
+_WINDOWS_TESSERACT = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+TESSERACT_CMD = os.environ.get('TESSERACT_CMD') or (
+    _WINDOWS_TESSERACT if os.name == 'nt' and os.path.exists(_WINDOWS_TESSERACT) else 'tesseract'
+)
 POPPLER_PATH = os.environ.get('POPPLER_PATH', '')
 
 # This app's login page is at /login, not Django's default /accounts/login/.
@@ -159,3 +171,16 @@ LOGIN_URL = '/login'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Production hardening (only when DEBUG is off).
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    X_FRAME_OPTIONS = 'DENY'
+
+# Tests: a fast password hasher (the default one is deliberately slow).
+if 'test' in sys.argv[1:2]:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

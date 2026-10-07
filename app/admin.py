@@ -1,10 +1,19 @@
 from django.contrib import admin
 
 from .models import (
-    Category, DOCTOR, USER, MEDICINE, Appointment, MedicineSafetyNote,
-    Prescription, PrescriptionFile, OCRResult, PrescriptionItem,
+    DOCTOR,
+    MEDICINE,
+    USER,
+    Appointment,
+    Category,
+    MedicineSafetyNote,
+    OCRResult,
+    Prescription,
+    PrescriptionFile,
+    PrescriptionItem,
 )
-from .models import complaints as Complaint, feedback as Feedback
+from .models import complaints as Complaint
+from .models import feedback as Feedback
 
 admin.site.register(Category)
 admin.site.register(DOCTOR)

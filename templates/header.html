@@ -54,11 +54,11 @@
           <li><a href="{% url 'home' %}" class="active">Home</a></li>
           <li><a href="{% url 'search_med' %}">Search Medicine</a></li>
           {% if user.is_authenticated %}
-            {% if user.groups.all.0.name == 'user' %}
+            {% if role == 'patient' %}
               <li><a href="{% url 'user_home' %}">My Dashboard</a></li>
-            {% elif user.groups.all.0.name == 'docter' %}
+            {% elif role == 'doctor' %}
               <li><a href="{% url 'doctor_home' %}">Doctor Dashboard</a></li>
-            {% elif user.is_superuser or user.groups.all.0.name == 'admin' %}
+            {% elif role == 'admin' %}
               <li><a href="{% url 'adminindex' %}">Admin Home</a></li>
             {% endif %}
           <li><a href="{% url 'logout' %}">Logout</a></li>
